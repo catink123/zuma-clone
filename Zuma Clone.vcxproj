@@ -134,32 +134,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Animation.cpp" />
-    <ClCompile Include="AssetManager.cpp" />
-    <ClCompile Include="Balls.cpp" />
-    <ClCompile Include="basics.cpp" />
-    <ClCompile Include="common.cpp" />
-    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="engine\Animation.cpp" />
+    <ClCompile Include="engine\AssetManager.cpp" />
+    <ClCompile Include="engine\basics.cpp" />
+    <ClCompile Include="engine\common.cpp" />
+    <ClCompile Include="engine\Engine.cpp" />
+    <ClCompile Include="engine\Sprite.cpp" />
+    <ClCompile Include="engine\Texture.cpp" />
+    <ClCompile Include="engine\UI.cpp" />
+    <ClCompile Include="game\Balls.cpp" />
+    <ClCompile Include="game\Player.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Player.cpp" />
-    <ClCompile Include="Sprite.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Animation.h" />
-    <ClInclude Include="AssetManager.h" />
-    <ClInclude Include="Balls.h" />
-    <ClInclude Include="common.h" />
-    <ClInclude Include="basics.h" />
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="EventHandler.h" />
-    <ClInclude Include="GameState.h" />
-    <ClInclude Include="Level.h" />
-    <ClInclude Include="Player.h" />
-    <ClInclude Include="Sprite.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="UI.h" />
+    <ClInclude Include="engine\Animation.h" />
+    <ClInclude Include="engine\AssetManager.h" />
+    <ClInclude Include="engine\basics.h" />
+    <ClInclude Include="engine\common.h" />
+    <ClInclude Include="engine\Engine.h" />
+    <ClInclude Include="engine\EventHandler.h" />
+    <ClInclude Include="engine\Sprite.h" />
+    <ClInclude Include="engine\Texture.h" />
+    <ClInclude Include="engine\UI.h" />
+    <ClInclude Include="game\Balls.h" />
+    <ClInclude Include="game\GameState.h" />
+    <ClInclude Include="game\Level.h" />
+    <ClInclude Include="game\Player.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\ball_blue.png" />
