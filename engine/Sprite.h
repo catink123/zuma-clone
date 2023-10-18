@@ -13,12 +13,14 @@ enum HorizontalAlignment {
 
 class Sprite : public Drawable {
 	Texture* texture;
-	SDL_Rect* clip_rect;
 	vec2* display_size;
 
 public:
+	SDL_Rect* clip_rect;
+
 	Transform global_transform;
 	Transform local_transform;
+	Transform* origin_transform = nullptr;
 
 	VerticalAlignment vertical_alignment = Top;
 	HorizontalAlignment horizontal_alignment = Left;
@@ -40,7 +42,6 @@ public:
 	void change_texture(Texture* new_texture);
 	vec2 get_size() const;
 	const Texture* get_texture() const;
-	void set_clip_rect(SDL_Rect* clip_rect);
 	void set_display_size(const vec2& size);
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const;
 };

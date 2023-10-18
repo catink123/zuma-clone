@@ -25,6 +25,7 @@ const Texture* Sprite::get_texture() const {
 
 void Sprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
 	Transform resulting_transform = global_transform + local_transform;
+
 	auto output_rect = 
 		texture->get_rect(
 			static_cast<int>(resulting_transform.position.x), 
@@ -78,10 +79,6 @@ void Sprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state) c
 	output_rect.h = static_cast<int>(output_rect.h * scaling);
 
 	SDL_RenderCopyEx(renderer, texture->get_raw(), clip_rect, &output_rect, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
-}
-
-void Sprite::set_clip_rect(SDL_Rect* rect) {
-	clip_rect = rect;
 }
 
 void Sprite::set_display_size(const vec2& size) {

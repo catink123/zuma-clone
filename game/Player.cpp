@@ -50,8 +50,7 @@ void Player::draw(SDL_Renderer* renderer, const RendererState& renderer_state) {
 			float anim_progress = current_animation->get_progress();
 
 			float shift = static_cast<float>(PLAYER_ANIM_SHIFT) * (1 - anim_progress);
-			local_transform.position.x = angle_cos * shift;
-			local_transform.position.y = angle_sin * shift;
+			local_transform.position.y = -shift;
 		}
 	}
 

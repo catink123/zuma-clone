@@ -32,7 +32,7 @@ void Ball::draw(SDL_Renderer* renderer, const RendererState& renderer_state) {
 	clip_rect->y = sheet_y * frame_h;
 	clip_rect->w = sheet_texture_w / (BALL_ROTATION_FRAME_COUNT / BALL_SPRITESHEET_H);
 	clip_rect->h = sheet_texture_h / BALL_SPRITESHEET_H;
-	set_clip_rect(clip_rect);
+	this->clip_rect = clip_rect;
 
 	Sprite::draw(renderer, renderer_state);
 	//set_ball_angle(get_ball_angle() + 0.1F);

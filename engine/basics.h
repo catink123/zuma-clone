@@ -25,7 +25,6 @@ public:
 	) : position(vec2(x, y)), scale(vec2(x_scale, y_scale)), rotation(rotation) {}
 
 	Transform operator+(const Transform& other) const;
-	Transform operator-(const Transform& other) const;
 };
 
 class Drawable {
