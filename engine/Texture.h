@@ -2,7 +2,7 @@
 #include <SDL.h>
 #undef main
 #include <SDL_image.h>
-#include "Common.h"
+#include "common.h"
 
 class Texture {
 	ushort w;

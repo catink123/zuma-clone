@@ -1,7 +1,8 @@
 #pragma once
 #include <SDL.h>
 #include "common.h"
-#include "GameState.h"
+#include "../game/GameState.h"
+#include "Animation.h"
 
 class Transformable {
 public:
@@ -29,4 +30,9 @@ public:
 class Drawable {
 public: 
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) = 0;
+};
+
+class Animatable {
+public:
+	virtual void update(const float& delta) = 0;
 };

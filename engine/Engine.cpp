@@ -1,7 +1,7 @@
-#include "Engine.h"
-#include "basics.h"
-#include "Sprite.h"
-#include "Player.h"
+#include "../engine/Engine.h"
+#include "../engine/basics.h"
+#include "../engine/Sprite.h"
+#include "../game/Player.h"
 
 Engine::Engine() {
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -33,7 +33,7 @@ Engine::Engine() {
 		return;
 	}
 
-	asset_manager = make_unique<AssetManager>();
+	asset_manager = make_shared<AssetManager>();
 	load_media();
 
 	run_loop();
@@ -53,6 +53,7 @@ void Engine::run_loop() {
 
 		SDL_RenderClear(renderer);
 		draw();
+		update();
 		SDL_RenderPresent(renderer);
 	}
 }
@@ -73,20 +74,52 @@ void Engine::add_event_handler(EventHandler* event_handler) {
 }
 
 void Engine::draw() {
-	//auto t_data = asset_manager->get_texture("player_normal");
-	//auto texture = t_data->get_texture();
-	//SDL_Rect out_rect = t_data->get_rect(0, 0, 0.5);
-	//SDL_RenderCopy(renderer, texture, NULL, &out_rect);
 	for (shared_ptr<Drawable> dr : drawables) {
 		dr->draw(renderer, game_state.renderer_state);
+	}
+}
+
+void Engine::update() {
+	float current_time = static_cast<float>(SDL_GetTicks()) / 1000.0F;
+	float delta = current_time - last_time;
+	last_time = current_time;
+
+	vector<shared_ptr<Animatable>> animatables = get_drawables_by_type<Animatable>();
+	for (auto animatable : animatables) {
+		animatable->update(delta);
+	}
+
+	vector<shared_ptr<Ball>> balls = get_drawables_by_type<Ball>();
+
+	for (auto ball : balls) {
+		ball->set_ball_angle(last_time * 100);
+		ball->rotation = last_time * 10;
 	}
 }
 
 void Engine::load_media() {
 	asset_manager->load_texture("player_normal", "assets/player_normal.png", renderer);
 	asset_manager->load_texture("player_action", "assets/player_action.png", renderer);
+	asset_manager->load_texture("ball_red", "assets/ball_red.png", renderer);
+	asset_manager->load_texture("ball_blue", "assets/ball_blue.png", renderer);
+	asset_manager->load_texture("ball_green", "assets/ball_green.png", renderer);
+	asset_manager->load_texture("ball_purple", "assets/ball_purple.png", renderer);
+	asset_manager->load_texture("ball_yellow", "assets/ball_yellow.png", renderer);
+	asset_manager->load_texture("ball_gray", "assets/ball_gray.png", renderer);
 
-	set_scale(0.75);
+	set_scale(1.25);
+
+	add_drawable("ball1", make_shared<Ball>(asset_manager, BallColor::Red, vec2(10, 10)));
+	add_drawable("ball2", make_shared<Ball>(asset_manager, BallColor::Green, vec2(10 + 40, 10)));
+	add_drawable("ball3", make_shared<Ball>(asset_manager, BallColor::Blue, vec2(10 + 80, 10)));
+	add_drawable("ball4", make_shared<Ball>(asset_manager, BallColor::Yellow, vec2(10 + 120, 10)));
+	add_drawable("ball5", make_shared<Ball>(asset_manager, BallColor::Purple, vec2(10 + 160, 10)));
+	add_drawable("ball6", make_shared<Ball>(asset_manager, BallColor::Gray, vec2(10 + 200, 10)));
+
+	auto balls = get_drawables_by_type<Ball>();
+	for (auto ball : balls) {
+		ball->set_ball_angle(90);
+	}
 
 	add_drawable(
 		"player", 

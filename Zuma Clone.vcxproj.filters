@@ -48,6 +48,9 @@
     <ClCompile Include="UI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Animation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -86,12 +89,33 @@
     <ClInclude Include="UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Animation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\player_action.png">
       <Filter>Assets</Filter>
     </Image>
     <Image Include="Assets\player_normal.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ball_red.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ball_blue.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ball_gray.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ball_green.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ball_purple.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\ball_yellow.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

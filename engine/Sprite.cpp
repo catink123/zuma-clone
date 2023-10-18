@@ -1,4 +1,4 @@
-#include "Sprite.h"
+#include "../engine/Sprite.h"
 
 void Sprite::change_texture(Texture* new_texture) {
 	texture = new_texture;
@@ -83,6 +83,7 @@ void Sprite::set_clip_rect(SDL_Rect* rect) {
 	clip_rect = rect;
 }
 
-void Sprite::set_display_size(vec2 size) {
-	display_size = &size;
+void Sprite::set_display_size(const vec2& size) {
+	vec2* s = new vec2(size);
+	display_size = s;
 }

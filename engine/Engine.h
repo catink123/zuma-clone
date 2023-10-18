@@ -7,7 +7,7 @@
 #include "AssetManager.h"
 #include "EventHandler.h"
 #include "basics.h"
-#include "GameState.h"
+#include "../game/GameState.h"
 
 using namespace std;
 
@@ -20,9 +20,11 @@ class Engine {
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
 	GameState game_state;
+	float last_time = 0;
 
 	void load_media();
 	void draw();
+	void update();
 	void poll_events(bool& quit);
 	void change_window_size(int w, int h);
 

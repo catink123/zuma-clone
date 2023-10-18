@@ -17,4 +17,7 @@ typedef struct vec2 {
 
 static const SDL_Rect DEFAULT_RECT;
 
-float rad_to_deg(float radians);
+float rad_to_deg(const float& radians);
+
+// convert given angle to a standard 0-360 format
+float normalize_angle(const float& angle);

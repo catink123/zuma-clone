@@ -1,4 +1,4 @@
-#include "AssetManager.h"
+#include "../engine/AssetManager.h"
 
 AMAssetLoadException::AMAssetLoadException(const char* msg) : msg(msg) {}
 const char* AMAssetLoadException::what() { return msg; }

@@ -1,6 +1,6 @@
 #pragma once
 #include <SDL.h>
-#include "GameState.h"
+#include "../game/GameState.h"
 
 class EventHandler {
 public:

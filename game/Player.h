@@ -1,9 +1,9 @@
 #pragma once
-#include "Sprite.h"
+#include "../engine/Sprite.h"
 #include "Balls.h"
-#include "AssetManager.h"
+#include "../engine/AssetManager.h"
 #include <random>
-#include "GameState.h"
+#include "../game/GameState.h"
 #include <cmath>
 
 class Player : public Sprite {

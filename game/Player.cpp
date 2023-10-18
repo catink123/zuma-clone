@@ -1,4 +1,4 @@
-#include "Player.h"
+#include "../game/Player.h"
 
 Player::Player(
 	pair<Texture*, Texture*> player_textures, 

@@ -134,6 +134,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Animation.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Balls.cpp" />
     <ClCompile Include="basics.cpp" />
@@ -146,6 +147,7 @@
     <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Animation.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Balls.h" />
     <ClInclude Include="common.h" />
@@ -160,6 +162,12 @@
     <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Assets\ball_blue.png" />
+    <Image Include="Assets\ball_gray.png" />
+    <Image Include="Assets\ball_green.png" />
+    <Image Include="Assets\ball_purple.png" />
+    <Image Include="Assets\ball_red.png" />
+    <Image Include="Assets\ball_yellow.png" />
     <Image Include="Assets\player_action.png" />
     <Image Include="Assets\player_normal.png" />
   </ItemGroup>

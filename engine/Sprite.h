@@ -1,7 +1,7 @@
 #pragma once
 #include "basics.h"
 #include "Texture.h"
-#include "GameState.h"
+#include "../game/GameState.h"
 
 enum VerticalAlignment {
 	Top, Middle, Bottom
@@ -38,6 +38,6 @@ public:
 	vec2 get_size() const;
 	const Texture* get_texture() const;
 	void set_clip_rect(SDL_Rect* clip_rect);
-	void set_display_size(vec2 size);
+	void set_display_size(const vec2& size);
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const;
 };
