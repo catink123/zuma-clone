@@ -11,12 +11,15 @@ enum HorizontalAlignment {
 	Left, Center, Right
 };
 
-class Sprite : public Drawable, public Transformable {
+class Sprite : public Drawable {
 	Texture* texture;
 	SDL_Rect* clip_rect;
 	vec2* display_size;
 
 public:
+	Transform global_transform;
+	Transform local_transform;
+
 	VerticalAlignment vertical_alignment = Top;
 	HorizontalAlignment horizontal_alignment = Left;
 
@@ -28,7 +31,7 @@ public:
 		SDL_Rect* clip_rect = nullptr,
 		vec2* display_size = nullptr
 	) :
-		Transformable(position, scale, rotation), 
+		global_transform(position, scale, rotation), 
 		texture(texture), 
 		clip_rect(clip_rect),
 		display_size(display_size)

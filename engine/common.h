@@ -13,11 +13,19 @@ typedef struct vec2 {
 	vec2(float x, float y) : x(x), y(y) {}
 	vec2(std::pair<float, float> params) : x(params.first), y(params.second) {}
 	vec2(const vec2& other) : x(other.x), y(other.y) {}
+
+	vec2 operator+(const vec2& other) const;
+	vec2 operator-(const vec2& other) const;
+	vec2 operator*(const vec2& other) const;
+	vec2 operator*(const float& amount) const;
+	vec2 operator/(const vec2& other) const;
+	vec2 operator/(const float& amount) const;
 } vec2;
 
 static const SDL_Rect DEFAULT_RECT;
 
 float rad_to_deg(const float& radians);
+float deg_to_rad(const float& degrees);
 
 // convert given angle to a standard 0-360 format
 float normalize_angle(const float& angle);

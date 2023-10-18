@@ -102,7 +102,7 @@ void Engine::update() {
 
 	for (auto ball : balls) {
 		ball->set_ball_angle(last_time * 100);
-		ball->rotation = last_time * 10;
+		ball->global_transform.rotation = last_time * 10;
 	}
 }
 
@@ -143,7 +143,7 @@ void Engine::load_media() {
 
 	shared_ptr<Player> player = dynamic_pointer_cast<Player>(drawable_map.at("player"));
 	if (player != nullptr)
-		player->position = vec2(WIDTH / 2, HEIGHT / 2);
+		player->global_transform.position = vec2(WIDTH / 2, HEIGHT / 2);
 
 	add_event_handler(new MouseHandler());
 }

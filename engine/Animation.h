@@ -24,7 +24,9 @@ enum AnimationLoopFill {
 class Animation {
 	float current_time = 0;
 	int current_iteration = 0;
-	bool is_finished = false;
+	bool is_anim_finished = false;
+
+	void loop_update();
 public:
 	int loop_count = -1;
 	float duration = 0;
@@ -34,10 +36,12 @@ public:
 	Animation(
 		float duration,
 		TimingFunction timing_function = TIMING_FUNCTIONS.at(Linear),
-		int loop_count = -1,
+		int loop_count = 0,
 		AnimationLoopFill loop_fill = Repeat
 	) : duration(duration), timing_function(timing_function), loop_count(loop_count), loop_fill(loop_fill) {}
 
 	void update(const float& delta);
+	void set_progess(const float& progress);
 	float get_progress() const;
+	const bool& is_finished() const;
 };

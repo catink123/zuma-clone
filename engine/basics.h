@@ -4,27 +4,28 @@
 #include "../game/GameState.h"
 #include "Animation.h"
 
-class Transformable {
+class Transform {
 public:
 	vec2 position;
 	vec2 scale;
-	float rotation;
+	float rotation = 0;
 
-	Transformable(
+	Transform(
 		vec2 position = vec2(0, 0), 
 		vec2 scale = vec2(1, 1), 
 		float rotation = 0
 	) : position(position), scale(scale), rotation(rotation) {}
 
-	Transformable(
-		float x = 0, 
-		float y = 0, 
+	Transform(
+		float x, 
+		float y, 
 		float x_scale = 1, 
 		float y_scale = 1, 
 		float rotation = 0
 	) : position(vec2(x, y)), scale(vec2(x_scale, y_scale)), rotation(rotation) {}
 
-	Transformable() : rotation(0) {}
+	Transform operator+(const Transform& other) const;
+	Transform operator-(const Transform& other) const;
 };
 
 class Drawable {
