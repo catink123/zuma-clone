@@ -33,6 +33,10 @@ Engine::Engine() {
 		return;
 	}
 
+	SDL_DisplayMode current_display_mode;
+	SDL_GetCurrentDisplayMode(0, &current_display_mode);
+	max_frame_time = 1 / static_cast<float>(current_display_mode.refresh_rate);
+
 	asset_manager = make_shared<AssetManager>();
 	load_media();
 
@@ -83,6 +87,11 @@ void Engine::update() {
 	float current_time = static_cast<float>(SDL_GetTicks()) / 1000.0F;
 	float delta = current_time - last_time;
 	last_time = current_time;
+
+	if (delta < max_frame_time) {
+		delta = max_frame_time;
+		SDL_Delay(static_cast<uint>((max_frame_time - delta) * 1000));
+	}
 
 	vector<shared_ptr<Animatable>> animatables = get_drawables_by_type<Animatable>();
 	for (auto animatable : animatables) {

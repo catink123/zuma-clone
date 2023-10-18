@@ -2,8 +2,8 @@
 #include <utility>
 #include <SDL.h>
 
-typedef unsigned short ushort;
-typedef unsigned int uint;
+typedef uint16_t ushort;
+typedef uint32_t uint;
 
 typedef struct vec2 {
 	float x;

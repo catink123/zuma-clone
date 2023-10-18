@@ -17,6 +17,8 @@ class Engine {
 	static const int WIDTH = 1280;
 	static const int HEIGHT = 720;
 
+	float max_frame_time = 0.0333333F;
+
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
 	GameState game_state;
