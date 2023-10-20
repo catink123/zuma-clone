@@ -44,4 +44,5 @@ public:
 	const Texture* get_texture() const;
 	void set_display_size(const vec2& size);
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const;
+	Transform get_calculated_transform() const;
 };

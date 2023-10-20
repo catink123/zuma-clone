@@ -1,10 +1,10 @@
 #include "../engine/Texture.h"
 #include <cmath>
 
-SDL_Rect Texture::get_rect(int x, int y, float scale) const {
-	SDL_Rect rect;
-	rect.w = static_cast<int>(this->w * scale);
-	rect.h = static_cast<int>(this->h * scale);
+SDL_FRect Texture::get_rect(float x, float y, float scale) const {
+	SDL_FRect rect;
+	rect.w = this->w * scale;
+	rect.h = this->h * scale;
 	rect.x = x;
 	rect.y = y;
 

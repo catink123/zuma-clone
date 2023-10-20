@@ -4,8 +4,9 @@ Transform Transform::operator+(const Transform& other) const {
 	// the new position will rotate on the origin (current position) by current rotation value
 	float angle_rad = deg_to_rad(rotation);
 
-	// distance between points is the length of vector AB, where A - this->position, B - other.position
-	float len_from_origin = hypotf(other.position.x, other.position.y);
+	// distance between points is the length of vector AB accounted for scale, 
+	// where A - this->position, B - other.position
+	float len_from_origin = hypotf(other.position.x * this->scale.x, other.position.y * this->scale.y);
 	if (len_from_origin == 0) len_from_origin = 0.00001; // prevent division by zero in the cosine calculation
 
 	float origin_angle = acosf(other.position.x / len_from_origin);

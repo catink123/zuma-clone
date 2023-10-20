@@ -13,6 +13,8 @@ using namespace std;
 
 typedef unordered_map<string, shared_ptr<Drawable>> drawable_map;
 
+class EngineDrawableNonexistentException : public exception {};
+
 class Engine {
 	static const int WIDTH = 1280;
 	static const int HEIGHT = 720;
@@ -40,7 +42,7 @@ public:
 	~Engine();
 
 	void run_loop();
-	void add_drawable(string id, shared_ptr<Drawable> drawable);
+	shared_ptr<Drawable> add_drawable(string id, shared_ptr<Drawable> drawable);
 	void remove_drawable(string id);
 	void add_event_handler(EventHandler* event_handler);
 	void add_drawable_raw(shared_ptr<Drawable> drawable);
@@ -48,4 +50,7 @@ public:
 
 	template <typename T>
 	vector<shared_ptr<T>> get_drawables_by_type();
+
+	template <typename T>
+	shared_ptr<T> get_drawable_by_name(const char* name);
 };

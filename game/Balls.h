@@ -5,6 +5,7 @@
 #include <memory>
 #include "../engine/Sprite.h"
 #include "../engine/AssetManager.h"
+#include <random>
 
 enum BallColor {
 	Red,
@@ -27,25 +28,24 @@ static const std::unordered_map<BallColor, std::string> BALL_COLOR_TEXTURE_MAP =
 };
 
 class Ball : public Sprite {
-	static const uint BALL_SIZE = 50;
 	static const uint BALL_ROTATION_FRAME_COUNT = 100;
 	static const uint BALL_SPRITESHEET_H = 10;
 	BallColor color;
 	float ball_angle;
 
 public:
+	static const uint BALL_SIZE = 50;
+
 	Ball(
 		shared_ptr<AssetManager> asset_manager,
 		BallColor color,
-		vec2 position
+		vec2 position = vec2(0, 0)
 	);
 
 	void draw(SDL_Renderer* renderer, const RendererState& renderer_state);
 
 	float get_ball_angle() const;
 	void set_ball_angle(float angle);
-
-	// static SDL_Rect get_
 };
 
 struct TrackSegment {
@@ -64,6 +64,8 @@ struct BallTrackCache {
 struct BallSegment {
 	vector<Ball> balls;
 	float position = 0;
+
+	float get_total_length() const;
 };
 
 class BTCreationException : public exception {
@@ -73,8 +75,18 @@ public:
 	const char* what();
 };
 
-class BallTrack {
+class BallTrack : public Drawable, public Animatable {
 	BallTrackCache cache;
 	vector<BallSegment> ball_segments;
-	BallTrack(const vector<vec2>& points);
+	shared_ptr<AssetManager> asset_manager;
+
+	int get_track_segment_by_position(const float& position) const;
+	float get_track_segment_length_sum(const uint& last_segment) const;
+
+public:
+	BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_manager);
+	void draw(SDL_Renderer* renderer, const RendererState& renderer_state);
+	void update(const float& delta);
+
+	bool is_point_on_balltrack(const vec2& point, const float& radius) const;
 };

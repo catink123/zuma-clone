@@ -10,7 +10,16 @@ Engine::Engine() {
 		return;
 	}
 	
-	window = SDL_CreateWindow("Zuma", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Engine::WIDTH, Engine::HEIGHT, SDL_WINDOW_SHOWN);
+	set_scale(1.25);
+
+	window = SDL_CreateWindow(
+		"Zuma", 
+		SDL_WINDOWPOS_CENTERED, 
+		SDL_WINDOWPOS_CENTERED, 
+		static_cast<int>(Engine::WIDTH * this->game_state.renderer_state.scaling), 
+		static_cast<int>(Engine::HEIGHT * this->game_state.renderer_state.scaling), 
+		SDL_WINDOW_SHOWN
+	);
 
 	if (window == nullptr) {
 		printf("Couldn't create the window! Error: %s\n", SDL_GetError());
@@ -97,13 +106,6 @@ void Engine::update() {
 	for (auto animatable : animatables) {
 		animatable->update(delta);
 	}
-
-	vector<shared_ptr<Ball>> balls = get_drawables_by_type<Ball>();
-
-	for (auto ball : balls) {
-		ball->set_ball_angle(last_time * 100);
-		ball->global_transform.rotation = last_time * 10;
-	}
 }
 
 void Engine::load_media() {
@@ -116,19 +118,7 @@ void Engine::load_media() {
 	asset_manager->load_texture("ball_yellow", "assets/ball_yellow.png", renderer);
 	asset_manager->load_texture("ball_gray", "assets/ball_gray.png", renderer);
 
-	set_scale(1.25);
-
-	add_drawable("ball1", make_shared<Ball>(asset_manager, BallColor::Red, vec2(10, 10)));
-	add_drawable("ball2", make_shared<Ball>(asset_manager, BallColor::Green, vec2(10 + 40, 10)));
-	add_drawable("ball3", make_shared<Ball>(asset_manager, BallColor::Blue, vec2(10 + 80, 10)));
-	add_drawable("ball4", make_shared<Ball>(asset_manager, BallColor::Yellow, vec2(10 + 120, 10)));
-	add_drawable("ball5", make_shared<Ball>(asset_manager, BallColor::Purple, vec2(10 + 160, 10)));
-	add_drawable("ball6", make_shared<Ball>(asset_manager, BallColor::Gray, vec2(10 + 200, 10)));
-
-	auto balls = get_drawables_by_type<Ball>();
-	for (auto ball : balls) {
-		ball->set_ball_angle(90);
-	}
+	add_drawable("player_ball", make_shared<Ball>(asset_manager, BallColor::Green));
 
 	add_drawable(
 		"player", 
@@ -141,18 +131,47 @@ void Engine::load_media() {
 		)
 	);
 
-	shared_ptr<Player> player = dynamic_pointer_cast<Player>(drawable_map.at("player"));
-	if (player != nullptr)
+	shared_ptr<Player> player = get_drawable_by_name<Player>("player");
+	if (player != nullptr) {
+		player->local_transform.scale = 0.75;
 		player->global_transform.position = vec2(WIDTH / 2, HEIGHT / 2);
+	}
+
+	auto player_ball = get_drawable_by_name<Ball>("player_ball");
+	if (player_ball != nullptr && player != nullptr) {
+		player_ball->global_transform.position.y = 100;
+		player_ball->origin_transform = &player->global_transform;
+	}
+
+	vector<vec2> track_points = {
+		vec2(0, 0),
+		vec2(320, 360),
+		vec2(700, 620),
+		vec2(880, 620),
+		vec2(960, 360),
+		vec2(1280, 0)
+	};
+
+	auto ball_track = dynamic_pointer_cast<BallTrack>(
+		add_drawable(
+			"ball_track",
+			make_shared<BallTrack>(
+				track_points,
+				asset_manager
+			)
+		)
+	);
 
 	add_event_handler(new MouseHandler());
 }
 
-void Engine::add_drawable(string id, shared_ptr<Drawable> drawable) {
+shared_ptr<Drawable> Engine::add_drawable(string id, shared_ptr<Drawable> drawable) {
 	// if the drawable with given id already exists, don't add anything
-	if (drawable_map.find(id) != drawable_map.end()) return;
+	if (drawable_map.find(id) != drawable_map.end()) return nullptr;
 	drawable_map.insert({ id, drawable });
 	add_drawable_raw(drawable);
+
+	return drawable;
 }
 
 void Engine::add_drawable_raw(shared_ptr<Drawable> drawable) {
@@ -186,4 +205,10 @@ vector<shared_ptr<T>> Engine::get_drawables_by_type() {
 	}
 
 	return result;
+}
+
+template <typename T>
+shared_ptr<T> Engine::get_drawable_by_name(const char* name) {
+	if (drawable_map.find(name) == drawable_map.end()) throw new EngineDrawableNonexistentException();
+	return dynamic_pointer_cast<T>(drawable_map.at(name));
 }
