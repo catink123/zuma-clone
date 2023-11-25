@@ -17,14 +17,19 @@ public:
 
 class AMAssetNotRegisteredException : public exception {};
 
+// AssetManager is the central place for loading and retrieving textures and other assets
 class AssetManager {
 	unordered_map<string, Texture> textures;
 public:
 	AssetManager();
 	~AssetManager();
 
-	Texture* get_texture(string id);
+	// gets the texture handle for the given texture
+	const Texture& get_texture(const string& id) const;
 
-	// Loads an image from path or gets it from cache if it is already loaded
-	void load_texture(string id, string path, SDL_Renderer* renderer);
+	// loads an image from path or gets it from cache if it is already loaded
+	void load_texture(const string& id, const string& path, SDL_Renderer* renderer);
+
+	// unloads an image by it's ID
+	void unload_texture(const string& id);
 };

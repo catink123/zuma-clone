@@ -24,13 +24,13 @@ public:
 			case SDL_MOUSEBUTTONDOWN: {
 				uint bitmask = SDL_GetMouseState(nullptr, nullptr);
 				if (bitmask & SDL_BUTTON(1)) game_state.mouse_state.is_lmb_pressed = true;
-				if (bitmask & SDL_BUTTON(2)) game_state.mouse_state.is_rmb_pressed = true;
+				if (bitmask & SDL_BUTTON(3)) game_state.mouse_state.is_rmb_pressed = true;
 				break;
 			}
 			case SDL_MOUSEBUTTONUP: {
 				uint bitmask = SDL_GetMouseState(nullptr, nullptr);
 				if (!(bitmask & SDL_BUTTON(1))) game_state.mouse_state.is_lmb_pressed = false;
-				if (!(bitmask & SDL_BUTTON(2))) game_state.mouse_state.is_rmb_pressed = false;
+				if (!(bitmask & SDL_BUTTON(3))) game_state.mouse_state.is_rmb_pressed = false;
 				break;
 			}
 		}

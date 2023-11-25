@@ -7,6 +7,7 @@ vec2 vec2::operator*(const float& amount) const { return vec2(this->x * amount, 
 vec2 vec2::operator/(const vec2& other) const { return vec2(this->x / other.x, this->y / other.y); }
 vec2 vec2::operator/(const float& amount) const { return vec2(this->x / amount, this->y / amount); }
 void vec2::operator=(const float& amount) { this->x = amount; this->y = amount; }
+void vec2::operator+=(const vec2& other) { this->x += other.x; this->y += other.y; }
 float vec2::len() const { return hypotf(x, y); }
 
 float vec2::dot(const vec2& first, const vec2& second) {
@@ -39,14 +40,9 @@ bool Collision::is_circle_on_line(
 	bool end_on_circle = Collision::is_circle_on_circle(line_end_point, radius, circle_center, radius);
 	if (start_on_circle || end_on_circle)
 		return true;
-
-	vec2 line_vec(line_start_point, line_end_point);
-	
-	vec2 balltrack_to_point_vec(line_start_point, circle_center);
-	float closest_point_length_fraction = vec2::dot(line_vec, balltrack_to_point_vec) / powf(line_vec.len(), 2);
 	
 	// closest point from circle on the segment
-	vec2 closest_point = line_start_point + (line_vec * closest_point_length_fraction);
+	vec2 closest_point = get_closest_point_on_line(line_start_point, line_end_point, circle_center);
 	
 	// if the closest point to segment is not on the segment, the given point is not on the segment
 	if (!Collision::is_point_on_line(line_start_point, line_end_point, closest_point))
@@ -54,6 +50,22 @@ bool Collision::is_circle_on_line(
 
 	float point_to_closest_distance = (circle_center - closest_point).len();
 	return point_to_closest_distance <= radius;
+}
+
+vec2 Collision::get_closest_point_on_line(
+	const vec2& line_start_point,
+	const vec2& line_end_point,
+	const vec2& point
+) {
+	vec2 line_vec(line_start_point, line_end_point);
+	
+	vec2 line_to_point_vec(line_start_point, point);
+	float closest_point_length_fraction = vec2::dot(line_vec, line_to_point_vec) / powf(line_vec.len(), 2);
+	
+	// closest point from circle on the segment
+	vec2 closest_point = line_start_point + (line_vec * closest_point_length_fraction);
+	
+	return closest_point;
 }
 
 bool Collision::is_point_on_line(

@@ -1,6 +1,7 @@
 #pragma once
 #include "basics.h"
 #include "Texture.h"
+#include <optional>
 #include "../game/GameState.h"
 
 enum VerticalAlignment {
@@ -12,11 +13,11 @@ enum HorizontalAlignment {
 };
 
 class Sprite : public Drawable {
-	Texture* texture;
-	vec2* display_size;
+	const Texture* texture;
+	optional<vec2> display_size;
 
 public:
-	SDL_Rect* clip_rect;
+	optional<SDL_Rect> clip_rect;
 
 	Transform global_transform;
 	Transform local_transform;
@@ -26,12 +27,12 @@ public:
 	HorizontalAlignment horizontal_alignment = Left;
 
 	Sprite(
-		Texture* texture, 
+		const Texture* texture, 
 		vec2 position = vec2(), 
 		vec2 scale = vec2(1, 1), 
 		float rotation = 0,
-		SDL_Rect* clip_rect = nullptr,
-		vec2* display_size = nullptr
+		optional<SDL_Rect> clip_rect = nullopt,
+		optional<vec2> display_size = nullopt
 	) :
 		global_transform(position, scale, rotation), 
 		texture(texture), 
@@ -39,10 +40,12 @@ public:
 		display_size(display_size)
 	{}
 
-	void change_texture(Texture* new_texture);
+	void change_texture(const Texture* new_texture);
 	vec2 get_size() const;
 	const Texture* get_texture() const;
 	void set_display_size(const vec2& size);
-	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const;
+	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
+
 	Transform get_calculated_transform() const;
+	void apply_origin_transform();
 };

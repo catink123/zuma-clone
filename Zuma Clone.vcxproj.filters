@@ -63,6 +63,9 @@
     <ClCompile Include="engine\Engine.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="engine\EntityManager.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine\Animation.h">
@@ -102,6 +105,9 @@
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
     <ClInclude Include="engine\Engine.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\EntityManager.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
   </ItemGroup>

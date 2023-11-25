@@ -1,13 +1,13 @@
 #include "../engine/Sprite.h"
 
-void Sprite::change_texture(Texture* new_texture) {
+void Sprite::change_texture(const Texture* new_texture) {
 	texture = new_texture;
 }
 
 vec2 Sprite::get_size() const {
-	if (display_size != nullptr)
+	if (display_size != nullopt)
 		return *display_size;
-	else if (clip_rect != nullptr)
+	else if (clip_rect != nullopt)
 		return vec2(
 			clip_rect->w * global_transform.scale.x,
 			clip_rect->h * global_transform.scale.y
@@ -32,13 +32,13 @@ void Sprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state) c
 			resulting_transform.position.y
 		);
 
-	if (display_size != nullptr) {
+	if (display_size != nullopt) {
 		output_rect.w = display_size->x;
 		output_rect.h = display_size->y;
 	}
-	else if (clip_rect != nullptr) {
-		output_rect.w = clip_rect->w;
-		output_rect.h = clip_rect->h;
+	else if (clip_rect != nullopt) {
+		output_rect.w = static_cast<float>(clip_rect->w);
+		output_rect.h = static_cast<float>(clip_rect->h);
 	}
 
 
@@ -78,11 +78,15 @@ void Sprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state) c
 	output_rect.w = output_rect.w * scaling;
 	output_rect.h = output_rect.h * scaling;
 
-	SDL_RenderCopyExF(renderer, texture->get_raw(), clip_rect, &output_rect, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
+	const SDL_Rect* cr = nullptr;
+	if (clip_rect)
+		cr = &clip_rect.value();
+
+	SDL_RenderCopyExF(renderer, texture->get_raw(), cr, &output_rect, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
 }
 
 void Sprite::set_display_size(const vec2& size) {
-	vec2* s = new vec2(size);
+	vec2 s(size);
 	display_size = s;
 }
 
@@ -95,4 +99,10 @@ Transform Sprite::get_calculated_transform() const {
 	resulting_transform = resulting_transform + global_transform + local_transform;
 
 	return resulting_transform;
+}
+
+void Sprite::apply_origin_transform() {
+	if (origin_transform != nullptr)
+		global_transform = *origin_transform + global_transform;
+	origin_transform = nullptr;
 }

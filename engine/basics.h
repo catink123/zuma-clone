@@ -29,10 +29,30 @@ public:
 
 class Drawable {
 public: 
-	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) = 0;
+	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const = 0;
 };
 
-class Animatable {
+class Updatable {
 public:
-	virtual void update(const float& delta) = 0;
+	virtual void update(const float& delta, GameState& game_state) = 0;
+};
+
+// Timer represents a basic timer
+class Timer : public Updatable {
+	float duration;
+	float current_time = 0;
+
+public:
+	Timer(const float& duration) : duration(duration) {}
+
+	// returns if the current_time is over the duration of the timer
+	bool is_done() const;
+	// resets the time to zero and optionally adds 
+	// the overrun time (difference between duration and current_time)
+	void reset(bool save_overrun);
+
+	// sets the current progress with a percentage
+	void set_progress(const float& progress);
+
+	void update(const float& delta, GameState& game_state) override;
 };

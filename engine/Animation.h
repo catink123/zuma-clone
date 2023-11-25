@@ -9,6 +9,7 @@ enum TimingFunctionType {
 	Linear, EaseIn, EaseOut, EaseInOut
 };
 
+// timing functions by their type
 const std::map<TimingFunctionType, TimingFunction> TIMING_FUNCTIONS = {
 	{ Linear, [](const float& t) { return t; } },
 	{ EaseIn, [](const float& t) { return powf(t, 2); } },
@@ -16,6 +17,7 @@ const std::map<TimingFunctionType, TimingFunction> TIMING_FUNCTIONS = {
 	{ EaseInOut, [](const float& t) { return t < 0.5F ? (powf(t * 2.0F, 2.0F) / 2.0F) : (0.5F + (1 - powf((1 - t) * 2, 2)) / 2); } }
 };
 
+// how the animation is repeated
 enum AnimationLoopFill {
 	Repeat,
 	Reverse
@@ -26,6 +28,7 @@ class Animation {
 	int current_iteration = 0;
 	bool is_anim_finished = false;
 
+	// update the loop iteration
 	void loop_update();
 public:
 	int loop_count = -1;

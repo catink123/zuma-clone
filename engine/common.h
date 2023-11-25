@@ -22,6 +22,7 @@ typedef struct vec2 {
 	vec2 operator/(const vec2& other) const;
 	vec2 operator/(const float& amount) const;
 	void operator=(const float& amount);
+	void operator+=(const vec2& other);
 
 	float len() const;
 	static float dot(const vec2& first, const vec2& second);
@@ -42,6 +43,11 @@ public:
 		const vec2& line_end_point,
 		const vec2& circle_center,
 		const float& radius
+	);
+	static vec2 get_closest_point_on_line(
+		const vec2& line_start_point,
+		const vec2& line_end_point,
+		const vec2& point
 	);
 	static bool is_point_on_line(
 		const vec2& line_start_point, 

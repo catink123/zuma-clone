@@ -109,6 +109,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +140,7 @@
     <ClCompile Include="engine\basics.cpp" />
     <ClCompile Include="engine\common.cpp" />
     <ClCompile Include="engine\Engine.cpp" />
+    <ClCompile Include="engine\EntityManager.cpp" />
     <ClCompile Include="engine\Sprite.cpp" />
     <ClCompile Include="engine\Texture.cpp" />
     <ClCompile Include="engine\UI.cpp" />
@@ -152,6 +154,7 @@
     <ClInclude Include="engine\basics.h" />
     <ClInclude Include="engine\common.h" />
     <ClInclude Include="engine\Engine.h" />
+    <ClInclude Include="engine\EntityManager.h" />
     <ClInclude Include="engine\EventHandler.h" />
     <ClInclude Include="engine\Sprite.h" />
     <ClInclude Include="engine\Texture.h" />

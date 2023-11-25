@@ -65,8 +65,8 @@ void Engine::run_loop() {
 		poll_events(quit);
 
 		SDL_RenderClear(renderer);
-		draw();
 		update();
+		draw();
 		SDL_RenderPresent(renderer);
 	}
 }
@@ -98,13 +98,12 @@ void Engine::update() {
 	last_time = current_time;
 
 	if (delta < max_frame_time) {
-		delta = max_frame_time;
 		SDL_Delay(static_cast<uint>((max_frame_time - delta) * 1000));
 	}
 
-	vector<shared_ptr<Animatable>> animatables = get_drawables_by_type<Animatable>();
-	for (auto animatable : animatables) {
-		animatable->update(delta);
+	vector<shared_ptr<Updatable>> updatables = get_drawables_by_type<Updatable>();
+	for (auto updatable : updatables) {
+		updatable->update(delta, game_state);
 	}
 }
 
@@ -117,31 +116,6 @@ void Engine::load_media() {
 	asset_manager->load_texture("ball_purple", "assets/ball_purple.png", renderer);
 	asset_manager->load_texture("ball_yellow", "assets/ball_yellow.png", renderer);
 	asset_manager->load_texture("ball_gray", "assets/ball_gray.png", renderer);
-
-	add_drawable("player_ball", make_shared<Ball>(asset_manager, BallColor::Green));
-
-	add_drawable(
-		"player", 
-		make_shared<Player>(
-			make_pair<Texture*, Texture*>(
-				asset_manager->get_texture("player_normal"), 
-				asset_manager->get_texture("player_action")
-			),
-			&game_state
-		)
-	);
-
-	shared_ptr<Player> player = get_drawable_by_name<Player>("player");
-	if (player != nullptr) {
-		player->local_transform.scale = 0.75;
-		player->global_transform.position = vec2(WIDTH / 2, HEIGHT / 2);
-	}
-
-	auto player_ball = get_drawable_by_name<Ball>("player_ball");
-	if (player_ball != nullptr && player != nullptr) {
-		player_ball->global_transform.position.y = 100;
-		player_ball->origin_transform = &player->global_transform;
-	}
 
 	vector<vec2> track_points = {
 		vec2(0, 0),
@@ -161,6 +135,33 @@ void Engine::load_media() {
 			)
 		)
 	);
+
+	add_drawable(
+		"player", 
+		make_shared<Player>(
+			asset_manager->get_texture("player_normal"), 
+			asset_manager->get_texture("player_action"),
+			asset_manager,
+			ball_track
+		)
+	);
+
+	shared_ptr<Player> player = get_drawable_by_name<Player>("player");
+	if (player != nullptr) {
+		player->local_transform.scale = 0.75;
+		player->global_transform.position = vec2(WIDTH / 2, HEIGHT / 2);
+	}
+
+	//add_drawable("player_ball", make_shared<Ball>(asset_manager, BallColor::Green));
+
+	try {
+		auto player_ball = get_drawable_by_name<Ball>("player_ball");
+		if (player_ball != nullptr && player != nullptr) {
+			player_ball->global_transform.position.y = 100;
+			player_ball->origin_transform = &player->global_transform;
+		}
+	}
+	catch (...) {}
 
 	add_event_handler(new MouseHandler());
 }
@@ -207,8 +208,8 @@ vector<shared_ptr<T>> Engine::get_drawables_by_type() {
 	return result;
 }
 
-template <typename T>
+template <class T>
 shared_ptr<T> Engine::get_drawable_by_name(const char* name) {
-	if (drawable_map.find(name) == drawable_map.end()) throw new EngineDrawableNonexistentException();
+	if (drawable_map.find(name) == drawable_map.end()) throw EngineDrawableNonexistentException();
 	return dynamic_pointer_cast<T>(drawable_map.at(name));
 }

@@ -7,7 +7,7 @@ Transform Transform::operator+(const Transform& other) const {
 	// distance between points is the length of vector AB accounted for scale, 
 	// where A - this->position, B - other.position
 	float len_from_origin = hypotf(other.position.x * this->scale.x, other.position.y * this->scale.y);
-	if (len_from_origin == 0) len_from_origin = 0.00001; // prevent division by zero in the cosine calculation
+	if (len_from_origin == 0) len_from_origin = 0.00001F; // prevent division by zero in the cosine calculation
 
 	float origin_angle = acosf(other.position.x / len_from_origin);
 	// if the other point is over this point, we need to negate the angle between the origin 
@@ -27,4 +27,21 @@ Transform Transform::operator+(const Transform& other) const {
 		this->scale * other.scale, 
 		this->rotation + other.rotation
 	);
+}
+
+bool Timer::is_done() const { return current_time >= duration; }
+
+void Timer::reset(bool save_overrun) {
+	if (save_overrun && is_done())
+		current_time -= duration;
+	else
+		current_time = 0;
+}
+
+void Timer::set_progress(const float& progress) {
+	current_time = duration * progress;
+}
+
+void Timer::update(const float& delta, GameState&) {
+	current_time += delta;
 }
