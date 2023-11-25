@@ -6,6 +6,12 @@
 #include <string>
 #include "Texture.h"
 
+#ifdef NDEBUG
+#define prefix "./"
+#else
+#define prefix "../../../"
+#endif
+
 using namespace std;
 
 class AMAssetLoadException : public exception {

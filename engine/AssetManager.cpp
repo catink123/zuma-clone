@@ -25,19 +25,23 @@ void AssetManager::load_texture(const string& id, const string& path, SDL_Render
 	// the asset is already loaded, there's no need to load it again
 	if (textures.find(id) != textures.end()) return;
 
-	SDL_Surface* surface = IMG_Load(path.c_str());
+	// construct the path string
+	auto constructed_path = string(prefix) + path;
+	auto c_path_str = constructed_path.c_str();
+
+	SDL_Surface* surface = IMG_Load(c_path_str);
 	// in case of an error (surface = nullptr) throw the error as an exception
 	if (surface == nullptr) {
 		auto sdl_error = IMG_GetError();
-		printf("Couldn't load image %s! Error: %s\n", path.c_str(), sdl_error);
+		printf("Couldn't load image %s! Error: %s\n", c_path_str, sdl_error);
 		throw AMAssetLoadException(sdl_error);
 	}
 
-	SDL_Texture* texture = IMG_LoadTexture(renderer, path.c_str());
+	SDL_Texture* texture = IMG_LoadTexture(renderer, c_path_str);
 	// same as above error handling
 	if (texture == nullptr) {
 		auto sdl_error = SDL_GetError();
-		printf("Couldn't load image %s! Error: %s\n", path.c_str(), sdl_error);
+		printf("Couldn't load image %s! Error: %s\n", c_path_str, sdl_error);
 		throw AMAssetLoadException(sdl_error);
 	}
 
