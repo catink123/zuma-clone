@@ -35,7 +35,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	engine/common.h
 	engine/Engine.cpp
 	engine/Engine.h
-	engine/EntityManager.cpp
 	engine/EntityManager.h
 	engine/Sprite.cpp
 	engine/Sprite.h

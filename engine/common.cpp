@@ -49,7 +49,7 @@ bool Collision::is_circle_on_line(
 		return false;
 
 	float point_to_closest_distance = (circle_center - closest_point).len();
-	return point_to_closest_distance <= radius;
+	return point_to_closest_distance <= radius * 2;
 }
 
 vec2 Collision::get_closest_point_on_line(

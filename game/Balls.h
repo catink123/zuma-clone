@@ -33,17 +33,20 @@ static const std::unordered_map<BallColor, std::string> BALL_COLOR_TEXTURE_MAP =
 class Ball : public Sprite, public Updatable {
 	static const uint BALL_ROTATION_FRAME_COUNT = 100;	// frame count of the ball's spritesheet
 	static const uint BALL_SPRITESHEET_H = 10;			// ball count of the spritesheet's column
-	BallColor color;
 	float ball_angle;	// ball rotation around it's X axis
+	shared_ptr<Sprite> sheen_sprite = nullptr;
 
 public:
 	static const uint BALL_SIZE = 50; // physical ball size
+	BallColor color;
 
 	Ball(
 		shared_ptr<AssetManager> asset_manager, // used for importing the specific ball textures
 		BallColor color,
 		vec2 position = vec2(0, 0)
 	);
+
+	void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 
 	void update(const float& delta, GameState& game_state) override;
 

@@ -46,6 +46,10 @@ public:
 	void set_display_size(const vec2& size);
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 
+	// Transform methods
+
+	// returns a sum of global_transform, local_transform and origin_transform (if exists)
 	Transform get_calculated_transform() const;
+	// applies (sums up) visual origin_transform to global_transform and removes origin_transform
 	void apply_origin_transform();
 };

@@ -1,7 +1,4 @@
-#include "../engine/Engine.h"
-#include "../engine/basics.h"
-#include "../engine/Sprite.h"
-#include "../game/Player.h"
+#include "Engine.h"
 
 Engine::Engine() {
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -47,6 +44,7 @@ Engine::Engine() {
 	max_frame_time = 1 / static_cast<float>(current_display_mode.refresh_rate);
 
 	asset_manager = make_shared<AssetManager>();
+	entity_manager = make_shared<EntityManager>();
 	load_media();
 
 	run_loop();
@@ -87,7 +85,7 @@ void Engine::add_event_handler(EventHandler* event_handler) {
 }
 
 void Engine::draw() {
-	for (shared_ptr<Drawable> dr : drawables) {
+	for (shared_ptr<Drawable> dr : entity_manager->entities) {
 		dr->draw(renderer, game_state.renderer_state);
 	}
 }
@@ -101,7 +99,7 @@ void Engine::update() {
 		SDL_Delay(static_cast<uint>((max_frame_time - delta) * 1000));
 	}
 
-	vector<shared_ptr<Updatable>> updatables = get_drawables_by_type<Updatable>();
+	vector<shared_ptr<Updatable>> updatables = entity_manager->get_entities_by_type<Updatable>();
 	for (auto updatable : updatables) {
 		updatable->update(delta, game_state);
 	}
@@ -116,6 +114,7 @@ void Engine::load_media() {
 	asset_manager->load_texture("ball_purple", "assets/ball_purple.png", renderer);
 	asset_manager->load_texture("ball_yellow", "assets/ball_yellow.png", renderer);
 	asset_manager->load_texture("ball_gray", "assets/ball_gray.png", renderer);
+	asset_manager->load_texture("ball_sheen", "assets/ball_sheen.png", renderer);
 
 	vector<vec2> track_points = {
 		vec2(0, 0),
@@ -127,7 +126,7 @@ void Engine::load_media() {
 	};
 
 	auto ball_track = dynamic_pointer_cast<BallTrack>(
-		add_drawable(
+		entity_manager->add_entity(
 			"ball_track",
 			make_shared<BallTrack>(
 				track_points,
@@ -136,52 +135,24 @@ void Engine::load_media() {
 		)
 	);
 
-	add_drawable(
+	entity_manager->add_entity(
 		"player", 
 		make_shared<Player>(
 			asset_manager->get_texture("player_normal"), 
 			asset_manager->get_texture("player_action"),
 			asset_manager,
+			entity_manager,
 			ball_track
 		)
 	);
 
-	shared_ptr<Player> player = get_drawable_by_name<Player>("player");
+	shared_ptr<Player> player = entity_manager->get_entity_by_name<Player>("player");
 	if (player != nullptr) {
 		player->local_transform.scale = 0.75;
 		player->global_transform.position = vec2(WIDTH / 2, HEIGHT / 2);
 	}
 
-	//add_drawable("player_ball", make_shared<Ball>(asset_manager, BallColor::Green));
-
-	try {
-		auto player_ball = get_drawable_by_name<Ball>("player_ball");
-		if (player_ball != nullptr && player != nullptr) {
-			player_ball->global_transform.position.y = 100;
-			player_ball->origin_transform = &player->global_transform;
-		}
-	}
-	catch (...) {}
-
 	add_event_handler(new MouseHandler());
-}
-
-shared_ptr<Drawable> Engine::add_drawable(string id, shared_ptr<Drawable> drawable) {
-	// if the drawable with given id already exists, don't add anything
-	if (drawable_map.find(id) != drawable_map.end()) return nullptr;
-	drawable_map.insert({ id, drawable });
-	add_drawable_raw(drawable);
-
-	return drawable;
-}
-
-void Engine::add_drawable_raw(shared_ptr<Drawable> drawable) {
-	drawables.push_back(drawable);
-}
-
-void Engine::remove_drawable(string id) {
-	if (drawable_map.find(id) == drawable_map.end()) return;
-	drawable_map.erase(id);
 }
 
 void Engine::change_window_size(int w, int h) {
@@ -193,23 +164,4 @@ void Engine::set_scale(float scale) {
 	int w = static_cast<int>(WIDTH * scale);
 	int h = static_cast<int>(HEIGHT * scale);
 	change_window_size(w, h);
-}
-
-template <typename T>
-vector<shared_ptr<T>> Engine::get_drawables_by_type() {
-	vector<shared_ptr<T>> result;
-
-	for (shared_ptr<Drawable> dr : drawables) {
-		shared_ptr<T> cast = dynamic_pointer_cast<T>(dr);
-		if (cast != nullptr)
-			result.push_back(cast);
-	}
-
-	return result;
-}
-
-template <class T>
-shared_ptr<T> Engine::get_drawable_by_name(const char* name) {
-	if (drawable_map.find(name) == drawable_map.end()) throw EngineDrawableNonexistentException();
-	return dynamic_pointer_cast<T>(drawable_map.at(name));
 }

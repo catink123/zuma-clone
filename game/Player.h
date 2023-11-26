@@ -1,25 +1,27 @@
 #pragma once
 #include "../engine/Sprite.h"
-#include "Balls.h"
 #include "../engine/AssetManager.h"
+#include "../engine/EntityManager.h"
+#include "GameState.h"
+#include "Balls.h"
 #include <random>
-#include "../game/GameState.h"
 #include <cmath>
 
 // PlayerBall is used with a Player
 // it has a velocity parameter for the PlayerBall to be able to shoot
 class PlayerBall : public Ball {
-	static const int BALL_SPEED = 10;
+	static const int BALL_SPEED = 60;
 	vec2 velocity;
 	// needed to check for a collision between the BallTrack and the PlayerBall
 	shared_ptr<BallTrack> ball_track;
 
 public:
+
 	PlayerBall(
 		shared_ptr<AssetManager> asset_manager,
 		shared_ptr<BallTrack> ball_track,
 		BallColor color,
-		const vec2& position,
+		const vec2& position = vec2(),
 		const float& rotation = 0
 	)
 		: Ball(asset_manager, color, position), ball_track(ball_track)
@@ -42,21 +44,26 @@ class Player : public Sprite, public Updatable {
 	// animation when LMB is pressed
 	Animation* current_animation = nullptr;
 
-	// timer for delaying the mouse button press
-	Timer* mb_timer = nullptr;
+	// timers for delaying the mouse button presses
+	Timer* lmb_timer = nullptr;
+	Timer* rmb_timer = nullptr;
 
 	void shoot_ball();
 
 public:
-	unique_ptr<PlayerBall> primary_ball;
-	unique_ptr<PlayerBall> secondary_ball;
-	shared_ptr<AssetManager> asset_manager;
-	shared_ptr<BallTrack> ball_track;
+	shared_ptr<Ball> primary_ball = nullptr;
+	shared_ptr<Ball> secondary_ball = nullptr;
+	// needed to load textures in balls
+	shared_ptr<AssetManager> asset_manager = nullptr;
+	// needed to add PlayerBall entities and control them
+	shared_ptr<EntityManager> entity_manager = nullptr;
+	shared_ptr<BallTrack> ball_track = nullptr;
 
 	Player(
 		const Texture& normal_texture, 
 		const Texture& action_texture,
 		shared_ptr<AssetManager> asset_manager,
+		shared_ptr<EntityManager> entity_manager,
 		shared_ptr<BallTrack> ball_track
 	);
 

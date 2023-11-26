@@ -15,10 +15,21 @@ Ball::Ball(
 	color(color),
 	ball_angle(0)
 {
+	sheen_sprite = make_shared<Sprite>(&asset_manager->get_texture("ball_sheen"));
+	sheen_sprite->set_display_size(vec2(BALL_SIZE, BALL_SIZE));
+	sheen_sprite->origin_transform = &global_transform;
+	sheen_sprite->vertical_alignment = Middle;
+	sheen_sprite->horizontal_alignment = Center;
+
 	set_display_size(vec2(BALL_SIZE, BALL_SIZE));
 	// align the ball to the absolute center
 	vertical_alignment = Middle;
 	horizontal_alignment = Center;
+}
+
+void Ball::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
+	Sprite::draw(renderer, renderer_state);
+	sheen_sprite->draw(renderer, renderer_state);
 }
 
 void Ball::update(const float&, GameState&) {
@@ -45,6 +56,9 @@ void Ball::update(const float&, GameState&) {
 	clip_rect.h = sheet_texture_h / BALL_SPRITESHEET_H;
 	// setting the clipping rectangle on the property inherited from Sprite class
 	this->clip_rect = clip_rect;
+
+	// "unrotate" the ball sheen sprite
+	sheen_sprite->local_transform.rotation = -global_transform.rotation;
 }
 
 float Ball::get_ball_angle() const { return ball_angle; }

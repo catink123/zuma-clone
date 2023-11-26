@@ -7,13 +7,16 @@
 #include "AssetManager.h"
 #include "EventHandler.h"
 #include "basics.h"
+#include "EntityManager.h"
+#include "Sprite.h"
+#include "../game/Player.h"
 #include "../game/GameState.h"
 
 using namespace std;
 
-typedef unordered_map<string, shared_ptr<Drawable>> drawable_map;
+typedef unordered_map<string, shared_ptr<Drawable>> entity_map;
 
-class EngineDrawableNonexistentException : public exception {};
+class EntityNonexistentException : public exception {};
 
 class Engine {
 	static const int WIDTH = 1280;
@@ -34,23 +37,13 @@ class Engine {
 
 public:
 	shared_ptr<AssetManager> asset_manager;
+	shared_ptr<EntityManager> entity_manager;
 	vector<EventHandler*> event_handlers;
-	vector<shared_ptr<Drawable>> drawables;
-	drawable_map drawable_map;
 
 	Engine();
 	~Engine();
 
 	void run_loop();
-	shared_ptr<Drawable> add_drawable(string id, shared_ptr<Drawable> drawable);
-	void remove_drawable(string id);
 	void add_event_handler(EventHandler* event_handler);
-	void add_drawable_raw(shared_ptr<Drawable> drawable);
 	void set_scale(float scale);
-
-	template <typename T>
-	vector<shared_ptr<T>> get_drawables_by_type();
-
-	template <typename T>
-	shared_ptr<T> get_drawable_by_name(const char* name);
 };
