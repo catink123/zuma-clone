@@ -13,11 +13,11 @@ Ball::Ball(
 		position
 	),
 	color(color),
-	ball_angle(0)
+	ball_angle(0),
+	asset_manager(asset_manager)
 {
 	sheen_sprite = make_shared<Sprite>(&asset_manager->get_texture("ball_sheen"));
 	sheen_sprite->set_display_size(vec2(BALL_SIZE, BALL_SIZE));
-	sheen_sprite->origin_transform = &global_transform;
 	sheen_sprite->vertical_alignment = Middle;
 	sheen_sprite->horizontal_alignment = Center;
 
@@ -57,14 +57,24 @@ void Ball::update(const float&, GameState&) {
 	// setting the clipping rectangle on the property inherited from Sprite class
 	this->clip_rect = clip_rect;
 
-	// "unrotate" the ball sheen sprite
-	sheen_sprite->local_transform.rotation = -global_transform.rotation;
+	// set the ball sheen sprite transform to ball's transform, but reset the rotation
+	sheen_sprite->global_transform = get_calculated_transform();
+	sheen_sprite->global_transform.rotation = 0;
 }
 
 float Ball::get_ball_angle() const { return ball_angle; }
 void Ball::set_ball_angle(const float& angle) {
 	// sets the ball_angle to a angle in 0-360 format
 	ball_angle = normalize_angle(angle);
+}
+
+void Ball::change_color(BallColor new_color) {
+	color = new_color;
+	change_texture(
+		&asset_manager->get_texture(
+			BALL_COLOR_TEXTURE_MAP.at(color)
+		)
+	);
 }
 
 uint BallSegment::get_total_length() const {
@@ -128,6 +138,9 @@ BallTrack::BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_
 		);
 	}
 	ball_segments.push_back(segment);
+
+	// temporary
+	//ball_segments[0].position = -cache.total_length;
 }
 
 uint BallTrack::get_track_segment_by_position(const float& position) const {
@@ -211,7 +224,7 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			ball.update(delta, game_state);
 		}
 
-		segment.position += delta * 10;
+		segment.position += delta * BASE_SPEED * speed_multiplier;
 	}
 }
 

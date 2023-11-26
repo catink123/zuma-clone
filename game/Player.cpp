@@ -14,21 +14,15 @@ Player::Player(
 	entity_manager(entity_manager),
 	ball_track(ball_track)
 {
-	BallColor primary_color = (BallColor)(rand() % BALL_COLOR_COUNT);
-	BallColor secondary_color = (BallColor)(rand() % BALL_COLOR_COUNT);
+	primary_color = get_random_ball_color();
+	secondary_color = get_random_ball_color();
 
-	primary_ball = 
+	drawing_ball = 
 		entity_manager->add_entity_raw(
 			make_shared<Ball>(asset_manager, primary_color, vec2(0, 100))
 		);
-	primary_ball->origin_transform = &global_transform;
+	drawing_ball->origin_transform = &global_transform;
 
-	secondary_ball = 
-		entity_manager->add_entity_raw(
-			make_shared<Ball>(asset_manager, secondary_color, vec2(0, 100))
-		);
-	secondary_ball->origin_transform = &global_transform;
-	
 	vertical_alignment = VerticalAlignment::Middle;
 	horizontal_alignment = HorizontalAlignment::Center;
 }
@@ -37,13 +31,13 @@ void Player::shoot_ball() {
 	// create the shooting ball
 	auto shooting_ball =
 		entity_manager->add_entity_raw(
-			make_shared<PlayerBall>(asset_manager, ball_track, primary_ball->color)
+			make_shared<PlayerBall>(asset_manager, ball_track, primary_color)
 		);
 
 	// copy all transforms from primary_ball to shooting_ball
-	shooting_ball->global_transform = primary_ball->global_transform;
-	shooting_ball->local_transform = primary_ball->local_transform;
-	shooting_ball->origin_transform = primary_ball->origin_transform;
+	shooting_ball->global_transform = drawing_ball->global_transform;
+	shooting_ball->local_transform = drawing_ball->local_transform;
+	shooting_ball->origin_transform = drawing_ball->origin_transform;
 
 	// "flattens" origin transform to global transform
 	shooting_ball->apply_origin_transform();
@@ -52,16 +46,27 @@ void Player::shoot_ball() {
 
 	// "shift" balls forward and assign a new color to the secondary ball
 
-	// swap balls places
-	primary_ball.swap(secondary_ball);
+	// swap balls places if there is a secondary color
+	if (secondary_color)
+		swap_balls();
+	else {
+		primary_color = get_random_ball_color();
+		drawing_ball->change_color(primary_color);
+	}
 
 	// create a new color and assign it to secondary_ball
-	BallColor new_color = (BallColor)(rand() % BALL_COLOR_COUNT);
-	secondary_ball->color = new_color;
+	secondary_color = get_random_ball_color();
+}
+
+void Player::swap_balls() {
+	if (secondary_color)
+		swap(primary_color, secondary_color.value());
+
+	drawing_ball->change_color(primary_color);
 }
 
 void Player::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
-	primary_ball->draw(renderer, renderer_state);
+	drawing_ball->draw(renderer, renderer_state);
 
 	Sprite::draw(renderer, renderer_state);
 }
@@ -103,9 +108,11 @@ void Player::update(const float& delta, GameState& game_state) {
 			lmb_timer->set_progress(1);
 		}
 
+		// if the timer is done counting, allow the LMB action and reset the timer
 		if (lmb_timer->is_done()) {
 			// shoot the ball
 			shoot_ball();
+
 			lmb_timer->reset(true);
 		}
 	}
@@ -130,8 +137,10 @@ void Player::update(const float& delta, GameState& game_state) {
 			rmb_timer->set_progress(1);
 		}
 
+		// if the timer is done counting, allow the RMB action and reset the timer
 		if (rmb_timer->is_done()) {
-			primary_ball.swap(secondary_ball);
+			swap_balls();
+
 			rmb_timer->reset(true);
 		}
 	}
@@ -159,9 +168,8 @@ void Player::update(const float& delta, GameState& game_state) {
 		}
 	}
 
-	// update the "holding" balls to make sure their animation frame is set
-	primary_ball->update(delta, game_state);
-	secondary_ball->update(delta, game_state);
+	// update the "holding" ball to make sure it's animation frame is set
+	drawing_ball->update(delta, game_state);
 
 	// update the mouse button delay timers if they exist
 	if (lmb_timer)
@@ -183,6 +191,6 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 }
 
 void PlayerBall::shoot(const float& angle) {
-	velocity.x = cosf(deg_to_rad(angle)) * static_cast<float>(BALL_SPEED);
-	velocity.y = sinf(deg_to_rad(angle)) * static_cast<float>(BALL_SPEED);
+	velocity.x = cosf(deg_to_rad(angle)) * BALL_SPEED;
+	velocity.y = sinf(deg_to_rad(angle)) *BALL_SPEED;
 }

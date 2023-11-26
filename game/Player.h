@@ -10,7 +10,7 @@
 // PlayerBall is used with a Player
 // it has a velocity parameter for the PlayerBall to be able to shoot
 class PlayerBall : public Ball {
-	static const int BALL_SPEED = 60;
+	static constexpr float BALL_SPEED = 400.0F;
 	vec2 velocity;
 	// needed to check for a collision between the BallTrack and the PlayerBall
 	shared_ptr<BallTrack> ball_track;
@@ -50,9 +50,12 @@ class Player : public Sprite, public Updatable {
 
 	void shoot_ball();
 
+	void swap_balls();
+
 public:
-	shared_ptr<Ball> primary_ball = nullptr;
-	shared_ptr<Ball> secondary_ball = nullptr;
+	shared_ptr<Ball> drawing_ball = nullptr;
+	BallColor primary_color;
+	optional<BallColor> secondary_color;
 	// needed to load textures in balls
 	shared_ptr<AssetManager> asset_manager = nullptr;
 	// needed to add PlayerBall entities and control them

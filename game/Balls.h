@@ -29,12 +29,17 @@ static const std::unordered_map<BallColor, std::string> BALL_COLOR_TEXTURE_MAP =
 	{ BallColor::Purple,	"ball_purple" }
 };
 
+inline BallColor get_random_ball_color() {
+	return (BallColor)(rand() % BALL_COLOR_COUNT);
+}
+
 // the logic behind the ball that can rotate and spin with animation
 class Ball : public Sprite, public Updatable {
 	static const uint BALL_ROTATION_FRAME_COUNT = 100;	// frame count of the ball's spritesheet
 	static const uint BALL_SPRITESHEET_H = 10;			// ball count of the spritesheet's column
 	float ball_angle;	// ball rotation around it's X axis
 	shared_ptr<Sprite> sheen_sprite = nullptr;
+	shared_ptr<AssetManager> asset_manager = nullptr;
 
 public:
 	static const uint BALL_SIZE = 50; // physical ball size
@@ -54,6 +59,9 @@ public:
 	float get_ball_angle() const;
 	// public setter for the private ball_angle with conversion to 0-360deg format
 	void set_ball_angle(const float& angle);
+
+	// change color to given one and replace the used texture
+	void change_color(BallColor new_color);
 };
 
 struct TrackSegment {
@@ -95,6 +103,7 @@ public:
 
 // logic behind drawing the balls on a track and checking collision with segments of balls
 class BallTrack : public Drawable, public Updatable {
+	static constexpr float BASE_SPEED = 40.0F;
 	// cache for precomputing track segment values (like angle, cosine, sine and length)
 	BallTrackCache cache;
 	// segments with filled balls that move over time
@@ -109,6 +118,8 @@ class BallTrack : public Drawable, public Updatable {
 	float get_track_segment_length_sum(const uint& last_segment) const;
 
 public:
+	float speed_multiplier = 1;
+
 	BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_manager);
 	void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 	virtual void update(const float& delta, GameState& game_state) override;

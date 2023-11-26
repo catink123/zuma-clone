@@ -7,7 +7,7 @@ Engine::Engine() {
 		return;
 	}
 	
-	set_scale(1.25);
+	set_scale(1.75);
 
 	window = SDL_CreateWindow(
 		"Zuma", 
