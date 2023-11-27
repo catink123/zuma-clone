@@ -8,13 +8,17 @@ struct MouseState {
 	bool is_rmb_pressed = false;
 };
 
+typedef const Uint8* KeyboardState;
+
 struct RendererState {
 	vec2 window_size = vec2(1280, 720);
 	float scaling = 1;
+	bool is_fullscreen = false;
 };
 
 struct GameState {
 	Level* level = nullptr;
 	MouseState mouse_state;
+	KeyboardState keyboard_state = nullptr;
 	RendererState renderer_state;
 };

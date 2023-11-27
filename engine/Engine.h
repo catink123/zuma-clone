@@ -29,6 +29,8 @@ class Engine {
 	GameState game_state;
 	float last_time = 0;
 
+	Timer* keyboard_timer = nullptr;
+
 	void load_media();
 	void draw();
 	void update();
@@ -46,4 +48,6 @@ public:
 	void run_loop();
 	void add_event_handler(EventHandler* event_handler);
 	void set_scale(float scale);
+
+	void set_fullscreen(bool state);
 };

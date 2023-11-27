@@ -184,7 +184,7 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 	// update position according to velocity
 	global_transform.position += velocity * delta;
 
-	auto collision_data = ball_track->get_collision_data(global_transform.position, 10);
+	auto collision_data = ball_track->get_collision_data(global_transform.position, Ball::BALL_SIZE / 2);
 	if (collision_data) {
 		velocity = 0;
 	}

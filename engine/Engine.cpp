@@ -7,7 +7,7 @@ Engine::Engine() {
 		return;
 	}
 	
-	set_scale(1.75);
+	set_scale(1);
 
 	window = SDL_CreateWindow(
 		"Zuma", 
@@ -47,11 +47,10 @@ Engine::Engine() {
 	entity_manager = make_shared<EntityManager>();
 	load_media();
 
-	run_loop();
+	set_fullscreen(true);
 }
 
 Engine::~Engine() {
-	asset_manager.reset();
 	SDL_DestroyWindow(window);
 	IMG_Quit();
 	SDL_Quit();
@@ -103,6 +102,25 @@ void Engine::update() {
 	for (auto updatable : updatables) {
 		updatable->update(delta, game_state);
 	}
+
+	// process keyboard
+	if (game_state.keyboard_state && game_state.keyboard_state[SDL_SCANCODE_F]) {
+		if (keyboard_timer == nullptr) {
+			keyboard_timer = new Timer(1);
+			keyboard_timer->set_progress(1);
+		}
+
+		if (keyboard_timer->is_done()) {
+			set_fullscreen(!game_state.renderer_state.is_fullscreen);
+			keyboard_timer->reset(true);
+		}
+	}
+	else {
+		if (keyboard_timer)
+			delete keyboard_timer;
+
+		keyboard_timer = nullptr;
+	}
 }
 
 void Engine::load_media() {
@@ -153,6 +171,7 @@ void Engine::load_media() {
 	}
 
 	add_event_handler(new MouseHandler());
+	add_event_handler(new KeyboardHandler());
 }
 
 void Engine::change_window_size(int w, int h) {
@@ -164,4 +183,21 @@ void Engine::set_scale(float scale) {
 	int w = static_cast<int>(WIDTH * scale);
 	int h = static_cast<int>(HEIGHT * scale);
 	change_window_size(w, h);
+}
+
+void Engine::set_fullscreen(bool state) {
+	game_state.renderer_state.is_fullscreen = state;
+	if (state) {
+		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+		SDL_DisplayMode current_display_mode;
+		SDL_GetCurrentDisplayMode(0, &current_display_mode);
+		// calculate scaling factor and set it
+		set_scale(static_cast<float>(current_display_mode.h) / static_cast<float>(Engine::HEIGHT));
+	}
+	else {
+		SDL_SetWindowFullscreen(window, 0);
+
+		set_scale(1);
+	}
 }

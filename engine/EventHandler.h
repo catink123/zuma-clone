@@ -10,7 +10,7 @@ public:
 
 class MouseHandler : public EventHandler {
 public:
-	void handle_events(SDL_Event* event, GameState& game_state) {
+	void handle_events(SDL_Event* event, GameState& game_state) override {
 		switch (event->type) {
 			case SDL_MOUSEMOTION: {
 				vec2* mouse_pos = &(game_state.mouse_state.mouse_pos);
@@ -31,6 +31,20 @@ public:
 				uint bitmask = SDL_GetMouseState(nullptr, nullptr);
 				if (!(bitmask & SDL_BUTTON(1))) game_state.mouse_state.is_lmb_pressed = false;
 				if (!(bitmask & SDL_BUTTON(3))) game_state.mouse_state.is_rmb_pressed = false;
+				break;
+			}
+		}
+	}
+};
+
+class KeyboardHandler : public EventHandler {
+public:
+	void handle_events(SDL_Event* event, GameState& game_state) override {
+		switch (event->type) {
+			case SDL_KEYDOWN:
+			case SDL_KEYUP: {
+				const Uint8* key_states = SDL_GetKeyboardState(nullptr);
+				game_state.keyboard_state = key_states;
 				break;
 			}
 		}

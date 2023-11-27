@@ -161,6 +161,22 @@ uint BallTrack::get_track_segment_by_position(const float& position) const {
 	return segment_index;
 }
 
+vector<uint> BallTrack::get_track_segments_from_ball_segment(const BallSegment& ball_segment) const {
+	vector<uint> result;
+
+	// track segment index of the start of given ball segment
+	uint start_track_index = get_track_segment_by_position(ball_segment.position);
+	// track segment index of the end of given ball segment
+	uint end_track_index = get_track_segment_by_position(ball_segment.position + ball_segment.get_total_length());
+
+	// every track segment index between the start and end ones 
+	// will also contain the given ball_segment, so we add the resulting range
+	for (int i = start_track_index; i <= end_track_index; i++)
+		result.push_back(i);
+	
+	return result;
+}
+
 float BallTrack::get_track_segment_length_sum(const uint& last_segment) const {
 	// if the given last segment index to sum to is more than there are segments, 
 	// return the total length, as there won't be any more segments than currently exist
@@ -239,12 +255,13 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 		const vec2& end_point = cache.points[i + 1];
 
 		// ... and find if the given point with radius (circle) is on the track's line
-		if (Collision::is_circle_on_line(start_point, end_point, point, Ball::BALL_SIZE + point_radius)) {
+		if (Collision::is_circle_on_line(start_point, end_point, point, point_radius)) {
 			// the collision point will be the nearest point on the line
 			vec2 p = Collision::get_closest_point_on_line(start_point, end_point, point);
 			collision_point = &p;
 			collision_data.track_segment_index = i;
 			collision_data.track_segment_position = vec2(start_point, *collision_point).len();
+			break;
 		}
 	}
 
@@ -257,7 +274,10 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 		const BallSegment& ball_segment = ball_segments[i];
 		// ... and seeing if any of the ball segments match the track segment, 
 		// with which the given circle collided
-		if (get_track_segment_by_position(ball_segment.position) == collision_data.track_segment_index) {
+
+		// get all track segment indecies that the ball segment goes through
+		auto indecies = get_track_segments_from_ball_segment(ball_segment);
+		if (find(indecies.begin(), indecies.end(), collision_data.track_segment_index) != indecies.end()) {
 			// get the collision position relative to the start of the track
 			float absolute_collision_position = 
 				get_track_segment_length_sum(collision_data.track_segment_index - 1) + collision_data.track_segment_position;
@@ -273,6 +293,7 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 			// otherwise there was no collision at all
 			else return nullopt;
 		}
+		else return nullopt;
 	}
 
 	return collision_data;

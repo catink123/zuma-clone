@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <set>
 #include <string>
 #include <cmath>
 #include <memory>
@@ -113,6 +114,8 @@ class BallTrack : public Drawable, public Updatable {
 
 	// find track segment's index by a given ball segment's position
 	uint get_track_segment_by_position(const float& position) const;
+	// get all track segment indecies that a given BallSegment goes through
+	vector<uint> get_track_segments_from_ball_segment(const BallSegment& ball_segment) const;
 	// calculate total track length up to (and including) the segment, 
 	// index of which is given as an argument
 	float get_track_segment_length_sum(const uint& last_segment) const;
