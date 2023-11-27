@@ -56,6 +56,11 @@ void Player::shoot_ball() {
 
 	// create a new color and assign it to secondary_ball
 	secondary_color = get_random_ball_color();
+
+	if (drawing_ball_animation == nullptr)
+		drawing_ball_animation = new Animation(0.5, TIMING_FUNCTIONS.at(EaseOut));
+
+	drawing_ball_animation->set_progess(0);
 }
 
 void Player::swap_balls() {
@@ -74,8 +79,11 @@ void Player::draw(SDL_Renderer* renderer, const RendererState& renderer_state) c
 
 void Player::update(const float& delta, GameState& game_state) {
 	// if there's an animation in progress, update it
-	if (current_animation != nullptr)
+	if (current_animation)
 		current_animation->update(delta);
+
+	if (drawing_ball_animation)
+		drawing_ball_animation->update(delta);
 
 	// calculate player's rotation using trigonometry
 	vec2 size = get_size();
@@ -165,6 +173,20 @@ void Player::update(const float& delta, GameState& game_state) {
 
 			float shift = static_cast<float>(PLAYER_ANIM_SHIFT) * (1 - anim_progress);
 			local_transform.position.y = -shift;
+		}
+	}
+
+	// same with the drawing ball
+	if (drawing_ball_animation != nullptr) {
+		if (drawing_ball_animation->is_finished()) {
+			delete drawing_ball_animation;
+			drawing_ball_animation = nullptr;
+		}
+		else {
+			float anim_progress = drawing_ball_animation->get_progress();
+
+			float shift = static_cast<float>(PLAYER_ANIM_SHIFT * 2) * (1 - anim_progress);
+			drawing_ball->local_transform.position.y = -shift;
 		}
 	}
 

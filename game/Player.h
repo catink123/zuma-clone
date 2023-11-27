@@ -34,7 +34,7 @@ public:
 
 class Player : public Sprite, public Updatable {
 	static const int PLAYER_ANIM_SHIFT = 30;
-	static const int MOUSE_BUTTON_DELAY = 1;
+	static constexpr float MOUSE_BUTTON_DELAY = 1.0F;
 
 	// the default texture used
 	const Texture& normal_texture;
@@ -43,6 +43,9 @@ class Player : public Sprite, public Updatable {
 
 	// animation when LMB is pressed
 	Animation* current_animation = nullptr;
+
+	// animation when a new "holding" ball appears
+	Animation* drawing_ball_animation = nullptr;
 
 	// timers for delaying the mouse button presses
 	Timer* lmb_timer = nullptr;

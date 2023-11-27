@@ -121,6 +121,9 @@ void Engine::update() {
 
 		keyboard_timer = nullptr;
 	}
+
+	if (keyboard_timer)
+		keyboard_timer->update(delta, game_state);
 }
 
 void Engine::load_media() {
