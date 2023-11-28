@@ -40,9 +40,9 @@ class Ball : public Sprite, public Updatable {
 	static const uint BALL_SPRITESHEET_H = 10;			// ball count of the spritesheet's column
 	float ball_angle;	// ball rotation around it's X axis
 	shared_ptr<Sprite> sheen_sprite = nullptr;
-	shared_ptr<AssetManager> asset_manager = nullptr;
 
 public:
+	shared_ptr<AssetManager> asset_manager = nullptr;
 	static const uint BALL_SIZE = 50; // physical ball size
 	BallColor color;
 
@@ -105,10 +105,6 @@ public:
 // logic behind drawing the balls on a track and checking collision with segments of balls
 class BallTrack : public Drawable, public Updatable {
 	static constexpr float BASE_SPEED = 40.0F;
-	// cache for precomputing track segment values (like angle, cosine, sine and length)
-	BallTrackCache cache;
-	// segments with filled balls that move over time
-	vector<BallSegment> ball_segments;
 	// pointer to asset_manager for Ball's constructor
 	shared_ptr<AssetManager> asset_manager;
 
@@ -121,6 +117,11 @@ class BallTrack : public Drawable, public Updatable {
 	float get_track_segment_length_sum(const uint& last_segment) const;
 
 public:
+	// cache for precomputing track segment values (like angle, cosine, sine and length)
+	BallTrackCache cache;
+	// segments with filled balls that move over time
+	vector<BallSegment> ball_segments;
+
 	float speed_multiplier = 1;
 
 	BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_manager);

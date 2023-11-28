@@ -208,11 +208,43 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 
 	auto collision_data = ball_track->get_collision_data(global_transform.position, Ball::BALL_SIZE / 2);
 	if (collision_data) {
+		uint first_ball_index =
+			static_cast<uint>(
+				ceilf(collision_data->ball_segment_position / Ball::BALL_SIZE)
+			);
+
+		uint second_ball_index = first_ball_index + 1;
+
+		auto& ball_segment = ball_track->ball_segments[collision_data->ball_segment_index];
+
+		Ball new_ball(asset_manager, color);
+		ball_segment.balls.insert(ball_segment.balls.begin() + first_ball_index, new_ball);
+
 		velocity = 0;
+		global_transform.position = vec2(1280 / 2, 0);
+		SDL_LogDebug(SDL_LogCategory::SDL_LOG_CATEGORY_TEST,
+			"Ball Segment Index: %d\n"
+			"Hit Balls Colors: %s and %s",
+			collision_data->ball_segment_index,
+			BALL_COLOR_TEXTURE_MAP.at(
+				ball_track->ball_segments[collision_data->ball_segment_index]
+					.balls[
+						first_ball_index
+					]
+					.color
+			).c_str(),
+			BALL_COLOR_TEXTURE_MAP.at(
+				ball_track->ball_segments[collision_data->ball_segment_index]
+					.balls[
+						second_ball_index
+					]
+					.color
+			).c_str()
+		);
 	}
 }
 
 void PlayerBall::shoot(const float& angle) {
 	velocity.x = cosf(deg_to_rad(angle)) * BALL_SPEED;
-	velocity.y = sinf(deg_to_rad(angle)) *BALL_SPEED;
+	velocity.y = sinf(deg_to_rad(angle)) * BALL_SPEED;
 }
