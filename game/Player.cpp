@@ -217,30 +217,32 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 
 		auto& ball_segment = ball_track->ball_segments[collision_data->ball_segment_index];
 
+		ball_track->cut_ball_segment(collision_data->ball_segment_index, collision_data->ball_segment_position);
+
 		Ball new_ball(asset_manager, color);
-		ball_segment.balls.insert(ball_segment.balls.begin() + first_ball_index, new_ball);
+		//ball_segment.balls.insert(ball_segment.balls.begin() + first_ball_index, new_ball);
 
 		velocity = 0;
 		global_transform.position = vec2(1280 / 2, 0);
-		SDL_LogDebug(SDL_LogCategory::SDL_LOG_CATEGORY_TEST,
-			"Ball Segment Index: %d\n"
-			"Hit Balls Colors: %s and %s",
-			collision_data->ball_segment_index,
-			BALL_COLOR_TEXTURE_MAP.at(
-				ball_track->ball_segments[collision_data->ball_segment_index]
-					.balls[
-						first_ball_index
-					]
-					.color
-			).c_str(),
-			BALL_COLOR_TEXTURE_MAP.at(
-				ball_track->ball_segments[collision_data->ball_segment_index]
-					.balls[
-						second_ball_index
-					]
-					.color
-			).c_str()
-		);
+		//SDL_LogDebug(SDL_LogCategory::SDL_LOG_CATEGORY_TEST,
+		//	"Ball Segment Index: %d\n"
+		//	"Hit Balls Colors: %s and %s",
+		//	collision_data->ball_segment_index,
+		//	BALL_COLOR_TEXTURE_MAP.at(
+		//		ball_track->ball_segments[collision_data->ball_segment_index]
+		//			.balls[
+		//				first_ball_index
+		//			]
+		//			.color
+		//	).c_str(),
+		//	BALL_COLOR_TEXTURE_MAP.at(
+		//		ball_track->ball_segments[collision_data->ball_segment_index]
+		//			.balls[
+		//				second_ball_index
+		//			]
+		//			.color
+		//	).c_str()
+		//);
 	}
 }
 

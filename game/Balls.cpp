@@ -277,6 +277,8 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 
 		// get all track segment indecies that the ball segment goes through
 		auto indecies = get_track_segments_from_ball_segment(ball_segment);
+		// if the track index that corresponds to the possible collision is in the array of
+		// indecies that the ball segment goes through, there could be a collision
 		if (find(indecies.begin(), indecies.end(), collision_data.track_segment_index) != indecies.end()) {
 			// get the collision position relative to the start of the track
 			float absolute_collision_position = 
@@ -288,13 +290,39 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 			if (ball_segment_collision_position >= 0 && ball_segment_collision_position <= ball_segment.get_total_length()) {
 				collision_data.ball_segment_index = i;
 				collision_data.ball_segment_position = ball_segment_collision_position;
-				break;
+
+				// return the constructed collision data early in the for-loop
+				return collision_data;
 			}
-			// otherwise there was no collision at all
-			else return nullopt;
 		}
-		else return nullopt;
+		// otherwise there was no collision, check the next ball segment
+	}
+	
+	// if we're here, the for-loop didn't return early, so no collision happened
+	return nullopt;
+}
+
+void BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& position) {
+	// calculate the index of the last ball that will be in the first ball segment
+	uint last_ball_index = ceilf(position / Ball::BALL_SIZE);
+
+	ball_segments.insert(ball_segments.begin() + ball_segment_index + 1, BallSegment());
+	BallSegment& first_ball_segment = ball_segments[ball_segment_index];
+	BallSegment& second_ball_segment = ball_segments[ball_segment_index + 1];
+
+	// cut off balls before the hit one and add them to the new segment
+	for (int i = last_ball_index; i < first_ball_segment.balls.size(); i++) {
+		second_ball_segment.balls.push_back(first_ball_segment.balls[i]);
 	}
 
-	return collision_data;
+	// if we need to erase balls...
+	if (first_ball_segment.balls.size() >= last_ball_index)
+		// cut off balls after the hit one
+		first_ball_segment.balls.erase(first_ball_segment.balls.begin() + last_ball_index, first_ball_segment.balls.begin() + (first_ball_segment.balls.size() - 1));
+
+	// remove one mystereously added ball at the end after the erase
+	first_ball_segment.balls.pop_back();
+
+	// calculate the position of the newly added ball_segment
+	second_ball_segment.position = first_ball_segment.position + first_ball_segment.get_total_length() + Ball::BALL_SIZE;
 }

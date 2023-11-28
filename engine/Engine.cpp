@@ -46,8 +46,6 @@ Engine::Engine() {
 	asset_manager = make_shared<AssetManager>();
 	entity_manager = make_shared<EntityManager>();
 	load_media();
-
-	set_fullscreen(true);
 }
 
 Engine::~Engine() {
