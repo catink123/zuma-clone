@@ -134,5 +134,9 @@ public:
 	optional<BallTrackCollisionData> get_collision_data(const vec2& point, const float& point_radius) const;
 
 	// splits a ball segment into two parts by it's index and position
-	void cut_ball_segment(const uint& ball_segment_index, const float& position);
+	// and returns true if the segment was cut and false otherwise
+	bool cut_ball_segment(const uint& ball_segment_index, const float& position);
+
+	// adds a new ball to the specified ball segment index and position
+	void insert_ball(const uint& ball_segment_index, const float& position, BallColor color);
 };

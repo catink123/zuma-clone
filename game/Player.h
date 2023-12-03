@@ -13,18 +13,21 @@ class PlayerBall : public Ball {
 	static constexpr float BALL_SPEED = 400.0F;
 	vec2 velocity;
 	// needed to check for a collision between the BallTrack and the PlayerBall
-	shared_ptr<BallTrack> ball_track;
+	shared_ptr<BallTrack> ball_track = nullptr;
+	// needed for PlayerBall to delete itself upon collision
+	shared_ptr<EntityManager> entity_manager = nullptr;
 
 public:
 
 	PlayerBall(
 		shared_ptr<AssetManager> asset_manager,
+		shared_ptr<EntityManager> entity_manager,
 		shared_ptr<BallTrack> ball_track,
 		BallColor color,
 		const vec2& position = vec2(),
 		const float& rotation = 0
 	)
-		: Ball(asset_manager, color, position), ball_track(ball_track)
+		: Ball(asset_manager, color, position), entity_manager(entity_manager), ball_track(ball_track)
 	{ this->global_transform.rotation = rotation; }
 
 	void update(const float& delta, GameState& game_state) override;
@@ -37,9 +40,9 @@ class Player : public Sprite, public Updatable {
 	static constexpr float MOUSE_BUTTON_DELAY = 1.0F;
 
 	// the default texture used
-	const Texture& normal_texture;
+	Texture& normal_texture;
 	// the texture used when LMB is pressed
-	const Texture& action_texture;
+	Texture& action_texture;
 
 	// animation when LMB is pressed
 	Animation* current_animation = nullptr;
@@ -66,8 +69,8 @@ public:
 	shared_ptr<BallTrack> ball_track = nullptr;
 
 	Player(
-		const Texture& normal_texture, 
-		const Texture& action_texture,
+		Texture& normal_texture, 
+		Texture& action_texture,
 		shared_ptr<AssetManager> asset_manager,
 		shared_ptr<EntityManager> entity_manager,
 		shared_ptr<BallTrack> ball_track

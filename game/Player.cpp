@@ -1,8 +1,8 @@
 #include "Player.h"
 
 Player::Player(
-	const Texture& normal_texture,
-	const Texture& action_texture,
+	Texture& normal_texture,
+	Texture& action_texture,
 	shared_ptr<AssetManager> asset_manager,
 	shared_ptr<EntityManager> entity_manager,
 	shared_ptr<BallTrack> ball_track
@@ -31,7 +31,7 @@ void Player::shoot_ball() {
 	// create the shooting ball
 	auto shooting_ball =
 		entity_manager->add_entity_raw(
-			make_shared<PlayerBall>(asset_manager, ball_track, primary_color)
+			make_shared<PlayerBall>(asset_manager, entity_manager, ball_track, primary_color), InLevel
 		);
 
 	// copy all transforms from primary_ball to shooting_ball
@@ -94,20 +94,9 @@ void Player::update(const float& delta, GameState& game_state) {
 	if (w < 0) global_transform.rotation += 180;
 
 	// if the LMB is pressed down, sping back the player and shoot the ball
-	if (game_state.mouse_state.is_lmb_pressed) {
+	if (game_state.mouse_state.is_lmb_down) {
 		// if the texture isn't already the action one, change it
 		if (*get_texture() != action_texture) change_texture(&action_texture);
-		// if there's no current animation, create it
-		if (current_animation == nullptr) {
-			current_animation =
-				new Animation(
-					0.25, // duration
-					TIMING_FUNCTIONS.at(TimingFunctionType::EaseOut) // EaseOut timing function
-				);
-		}
-		
-		// reset the animation progress in any case
-		current_animation->set_progess(0);
 
 		// if there was no timer, then LMB was just pressed, create a new timer
 		// and allow the swap action right away by setting progress to 100%
@@ -118,6 +107,18 @@ void Player::update(const float& delta, GameState& game_state) {
 
 		// if the timer is done counting, allow the LMB action and reset the timer
 		if (lmb_timer->is_done()) {
+			// if there's no current animation, create it
+			if (current_animation == nullptr) {
+				current_animation =
+					new Animation(
+						0.25, // duration
+						TIMING_FUNCTIONS.at(TimingFunctionType::EaseOut) // EaseOut timing function
+					);
+			}
+			
+			// reset the animation progress in any case
+			current_animation->set_progess(0);
+
 			// shoot the ball
 			shoot_ball();
 
@@ -137,7 +138,7 @@ void Player::update(const float& delta, GameState& game_state) {
 
 	// if the RMB is pressed down, swap primary and secondary bots
 	// and delay the next swap if it's still pressed down
-	if (game_state.mouse_state.is_rmb_pressed) {
+	if (game_state.mouse_state.is_rmb_down) {
 		// if there was no timer, then RMB was just pressed, create a new timer
 		// and allow the swap action right away by setting progress to 100%
 		if (rmb_timer == nullptr) {
@@ -217,32 +218,11 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 
 		auto& ball_segment = ball_track->ball_segments[collision_data->ball_segment_index];
 
-		ball_track->cut_ball_segment(collision_data->ball_segment_index, collision_data->ball_segment_position);
-
-		Ball new_ball(asset_manager, color);
-		//ball_segment.balls.insert(ball_segment.balls.begin() + first_ball_index, new_ball);
+		ball_track->insert_ball(collision_data->ball_segment_index, collision_data->ball_segment_position, color);
 
 		velocity = 0;
-		global_transform.position = vec2(1280 / 2, 0);
-		//SDL_LogDebug(SDL_LogCategory::SDL_LOG_CATEGORY_TEST,
-		//	"Ball Segment Index: %d\n"
-		//	"Hit Balls Colors: %s and %s",
-		//	collision_data->ball_segment_index,
-		//	BALL_COLOR_TEXTURE_MAP.at(
-		//		ball_track->ball_segments[collision_data->ball_segment_index]
-		//			.balls[
-		//				first_ball_index
-		//			]
-		//			.color
-		//	).c_str(),
-		//	BALL_COLOR_TEXTURE_MAP.at(
-		//		ball_track->ball_segments[collision_data->ball_segment_index]
-		//			.balls[
-		//				second_ball_index
-		//			]
-		//			.color
-		//	).c_str()
-		//);
+
+		entity_manager->schedule_to_delete(this);
 	}
 }
 

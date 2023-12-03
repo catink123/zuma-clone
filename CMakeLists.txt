@@ -1,6 +1,7 @@
 # include SDL2 and SDL2_image
 list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_image-2.6.3")
 list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2-2.28.3")
+list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_ttf-2.20.2")
 
 cmake_minimum_required(VERSION 3.8)
 
@@ -10,7 +11,7 @@ project(ZumaClone
 	LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # generated executable
 add_executable(${PROJECT_NAME} main.cpp)
@@ -46,17 +47,29 @@ target_sources(${PROJECT_NAME} PRIVATE
 	game/Balls.h
 	game/Player.cpp
 	game/Player.h
+
+	engine/UIElements/Text.h
+	engine/UIElements/Button.h
+	engine/UIElements/FlexContainer.h
 )
 
 # header files directories for the given executable
 # target_include_directories(${PROJECT_NAME} PRIVATE engine game)
 
-# include SDL2 and SDL2_image
+# include SDL2
 
 find_package(SDL2 REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
 
+# include SDL2_image
+
 find_package(SDL2_image REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
+
+# include SDL2_ttf
+
+find_package(SDL2_ttf REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_ttf::SDL2_ttf)

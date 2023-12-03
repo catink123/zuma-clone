@@ -18,7 +18,8 @@ public:
 	SDL_FRect get_rect(const float& x = 0, const float& y = 0, const float& scale = 1) const;
 	ushort get_width() const;
 	ushort get_height() const;
-	SDL_Texture* get_raw() const;
+	virtual SDL_Texture* get_raw() const;
+	virtual void destroy();
 
 	bool operator==(const Texture& other) const;
 	bool operator!=(const Texture& other) const;

@@ -302,9 +302,12 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 	return nullopt;
 }
 
-void BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& position) {
+bool BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& position) {
 	// calculate the index of the last ball that will be in the first ball segment
 	uint last_ball_index = ceilf(position / Ball::BALL_SIZE);
+
+	if (last_ball_index >= ball_segments[ball_segment_index].balls.size() || last_ball_index < 0)
+		return false;
 
 	ball_segments.insert(ball_segments.begin() + ball_segment_index + 1, BallSegment());
 	BallSegment& first_ball_segment = ball_segments[ball_segment_index];
@@ -315,14 +318,51 @@ void BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& po
 		second_ball_segment.balls.push_back(first_ball_segment.balls[i]);
 	}
 
-	// if we need to erase balls...
-	if (first_ball_segment.balls.size() >= last_ball_index)
-		// cut off balls after the hit one
-		first_ball_segment.balls.erase(first_ball_segment.balls.begin() + last_ball_index, first_ball_segment.balls.begin() + (first_ball_segment.balls.size() - 1));
+	// cut off balls after the hit one
+	first_ball_segment.balls.erase(first_ball_segment.balls.begin() + last_ball_index, first_ball_segment.balls.end() - 1);
 
 	// remove one mystereously added ball at the end after the erase
 	first_ball_segment.balls.pop_back();
 
 	// calculate the position of the newly added ball_segment
-	second_ball_segment.position = first_ball_segment.position + first_ball_segment.get_total_length() + Ball::BALL_SIZE;
+	second_ball_segment.position = first_ball_segment.position + first_ball_segment.get_total_length() + Ball::BALL_SIZE * 3;
+	// temp: shift all previous segments
+	for (int i = ball_segment_index + 2; i < ball_segments.size(); i++) {
+		int n = i - (ball_segment_index + 1);
+		ball_segments[i].position += n * Ball::BALL_SIZE * 3;
+	}
+
+	return true;
+}
+
+void BallTrack::insert_ball(const uint& ball_segment_index, const float& position, BallColor color) {
+	// calculate the index of the last ball that will be in the first ball segment
+	uint insertion_index = ceilf(position / Ball::BALL_SIZE);
+
+	// cut_ball_segment returns if the segment was cut
+	bool was_cut = cut_ball_segment(ball_segment_index, position);
+
+	// construct the new ball
+	Ball new_ball(asset_manager, color);
+
+	//if (was_cut) {
+	//	// save the size of the first cut part
+	//	size_t first_part_size = ball_segments[ball_segment_index].balls.size();
+
+	//	// the insertion index is in the second cut part if
+	//	// it exceeds the size of the first cut part
+	//	bool is_in_second_part = insertion_index >= first_part_size;
+
+	//	// if it was in the second part, shift the index back by the size of
+	//	// the first cut part and add the new ball to the second part
+	//	if (is_in_second_part) {
+	//		insertion_index -= first_part_size;
+	//		auto& second_part = ball_segments[ball_segment_index + 1].balls;
+	//		second_part.insert(second_part.begin() + insertion_index, new_ball);
+	//		return;
+	//	}
+	//}
+	//// otherwise, there is only one (and first) cut part, add the new ball to it
+	auto& first_part = ball_segments[ball_segment_index].balls;
+	first_part.insert(first_part.begin() + insertion_index, new_ball);
 }

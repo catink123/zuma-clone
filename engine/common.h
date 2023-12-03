@@ -10,6 +10,7 @@ typedef struct vec2 {
 	float y;
 
 	vec2() : x(0), y(0) {}
+	vec2(float amount) : x(amount), y(amount) {}
 	vec2(float x, float y) : x(x), y(y) {}
 	vec2(const vec2& start_point, const vec2& end_point) : x(end_point.x - start_point.x), y(end_point.y - start_point.y) {}
 	vec2(std::pair<float, float> params) : x(params.first), y(params.second) {}
@@ -29,6 +30,16 @@ typedef struct vec2 {
 } vec2;
 
 static const SDL_Rect DEFAULT_RECT;
+
+inline SDL_FRect rect_to_frect(const SDL_Rect& rect) {
+	SDL_FRect result;
+	result.x = static_cast<float>(rect.x);
+	result.y = static_cast<float>(rect.y);
+	result.w = static_cast<float>(rect.w);
+	result.h = static_cast<float>(rect.h);
+
+	return result;
+}
 
 float rad_to_deg(const float& radians);
 float deg_to_rad(const float& degrees);

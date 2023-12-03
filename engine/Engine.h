@@ -1,6 +1,8 @@
 #pragma once
 #include <SDL.h>
 #undef main
+#include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <iostream>
 #include <unordered_map>
 #include <string>
@@ -11,12 +13,13 @@
 #include "Sprite.h"
 #include "../game/Player.h"
 #include "../game/GameState.h"
+#include "UI.h"
+#include "UIElements/Button.h"
+#include "UIElements/FlexContainer.h"
 
 using namespace std;
 
 typedef unordered_map<string, shared_ptr<Drawable>> entity_map;
-
-class EntityNonexistentException : public exception {};
 
 class Engine {
 	static const int WIDTH = 1280;
@@ -34,7 +37,7 @@ class Engine {
 	void load_media();
 	void draw();
 	void update();
-	void poll_events(bool& quit);
+	void poll_events();
 	void change_window_size(int w, int h);
 
 public:

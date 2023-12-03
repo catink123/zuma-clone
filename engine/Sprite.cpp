@@ -1,6 +1,6 @@
 #include "../engine/Sprite.h"
 
-void Sprite::change_texture(const Texture* new_texture) {
+void Sprite::change_texture(Texture* new_texture) {
 	texture = new_texture;
 }
 
@@ -19,11 +19,13 @@ vec2 Sprite::get_size() const {
 		);
 }
 
-const Texture* Sprite::get_texture() const {
+Texture* Sprite::get_texture() const {
 	return texture;
 }
 
 void Sprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
+	if (texture == nullptr) return;
+
 	Transform resulting_transform = get_calculated_transform();
 
 	auto output_rect = 
