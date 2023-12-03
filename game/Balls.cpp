@@ -81,6 +81,15 @@ uint BallSegment::get_total_length() const {
 	return Ball::BALL_SIZE * static_cast<uint>(balls.size());
 }
 
+void BallSegment::shift() {
+	is_shifting = true;
+
+	if (shift_timer == nullptr)
+		shift_timer = new Timer(SHIFT_TIME);
+
+	shift_timer->reset(true);
+}
+
 BTCreationException::BTCreationException(const char* message) { msg = message; }
 const char* BTCreationException::what() { return msg; }
 
@@ -240,7 +249,26 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			ball.update(delta, game_state);
 		}
 
-		segment.position += delta * BASE_SPEED * speed_multiplier;
+		if (segment.shift_timer) {
+			if (segment.shift_timer->is_done()) {
+				segment.is_shifting = false;
+
+				delete segment.shift_timer;
+				segment.shift_timer = nullptr;
+			}
+			else {
+				segment.shift_timer->update(delta, game_state);
+			}
+		}
+
+		// move the segment by a calculated speed
+
+		float total_speed = BASE_SPEED * speed_multiplier + segment.speed;
+
+		if (segment.is_shifting)
+			total_speed += Ball::BALL_SIZE / BallSegment::SHIFT_TIME;
+
+		segment.position += delta * total_speed;
 	}
 }
 
@@ -325,12 +353,10 @@ bool BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& po
 	first_ball_segment.balls.pop_back();
 
 	// calculate the position of the newly added ball_segment
-	second_ball_segment.position = first_ball_segment.position + first_ball_segment.get_total_length() + Ball::BALL_SIZE * 3;
-	// temp: shift all previous segments
-	for (int i = ball_segment_index + 2; i < ball_segments.size(); i++) {
-		int n = i - (ball_segment_index + 1);
-		ball_segments[i].position += n * Ball::BALL_SIZE * 3;
-	}
+	second_ball_segment.position = first_ball_segment.position + first_ball_segment.get_total_length();
+
+	//second_ball_segment.speed += 20 + first_ball_segment.speed;
+	second_ball_segment.shift();
 
 	return true;
 }
@@ -339,30 +365,30 @@ void BallTrack::insert_ball(const uint& ball_segment_index, const float& positio
 	// calculate the index of the last ball that will be in the first ball segment
 	uint insertion_index = ceilf(position / Ball::BALL_SIZE);
 
-	// cut_ball_segment returns if the segment was cut
-	bool was_cut = cut_ball_segment(ball_segment_index, position);
+	cut_ball_segment(ball_segment_index, position);
 
 	// construct the new ball
 	Ball new_ball(asset_manager, color);
 
-	//if (was_cut) {
-	//	// save the size of the first cut part
-	//	size_t first_part_size = ball_segments[ball_segment_index].balls.size();
+	// add it the the first (if not the only) part
+	//auto& first_part = ball_segments[ball_segment_index].balls;
+	//first_part.insert(first_part.begin() + insertion_index, new_ball);
+}
 
-	//	// the insertion index is in the second cut part if
-	//	// it exceeds the size of the first cut part
-	//	bool is_in_second_part = insertion_index >= first_part_size;
+void BallTrack::connect_ball_segments(const uint& ball_segment_index) {
+	// if the segment to connect is the last one, there is no
+	// next one, return early in that case
+	if (ball_segment_index >= ball_segments.size()) return;
 
-	//	// if it was in the second part, shift the index back by the size of
-	//	// the first cut part and add the new ball to the second part
-	//	if (is_in_second_part) {
-	//		insertion_index -= first_part_size;
-	//		auto& second_part = ball_segments[ball_segment_index + 1].balls;
-	//		second_part.insert(second_part.begin() + insertion_index, new_ball);
-	//		return;
-	//	}
-	//}
-	//// otherwise, there is only one (and first) cut part, add the new ball to it
-	auto& first_part = ball_segments[ball_segment_index].balls;
-	first_part.insert(first_part.begin() + insertion_index, new_ball);
+	auto& first_ball_segment = ball_segments[ball_segment_index];
+	auto& second_ball_segment = ball_segments[ball_segment_index + 1];
+
+	// move all balls from the second segment to the end of the first one
+	first_ball_segment.balls.insert(
+		first_ball_segment.balls.end(),
+		make_move_iterator(second_ball_segment.balls.begin()),
+		make_move_iterator(second_ball_segment.balls.end())
+	);
+
+	ball_segments.erase(ball_segments.begin() + ball_segment_index + 1);
 }

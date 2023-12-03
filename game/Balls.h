@@ -80,8 +80,15 @@ struct BallTrackCache {
 };
 
 struct BallSegment {
+	Timer* shift_timer = nullptr;
+	static constexpr float SHIFT_TIME = 0.25F;
+
 	vector<Ball> balls;
 	float position = 0;
+	float speed = 0;
+	bool is_shifting = false;
+
+	void shift();
 
 	uint get_total_length() const;
 };
@@ -136,6 +143,9 @@ public:
 	// splits a ball segment into two parts by it's index and position
 	// and returns true if the segment was cut and false otherwise
 	bool cut_ball_segment(const uint& ball_segment_index, const float& position);
+
+	// connects a ball segment by it's index with the next ball segment
+	void connect_ball_segments(const uint& ball_segment_index);
 
 	// adds a new ball to the specified ball segment index and position
 	void insert_ball(const uint& ball_segment_index, const float& position, BallColor color);
