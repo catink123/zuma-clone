@@ -315,7 +315,7 @@ void Engine::load_media() {
 	game_flex->alignment = FlexContainer::Alignment::Middle;
 	game_ui->root_element = game_flex;
 
-	game_state.section = InMenu;
+	game_state.section = InLevel;
 }
 
 void Engine::change_window_size(int w, int h) {

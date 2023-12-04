@@ -17,7 +17,17 @@ class PlayerBall : public Ball {
 	// needed for PlayerBall to delete itself upon collision
 	shared_ptr<EntityManager> entity_manager = nullptr;
 
+	// animation for when this ball collides with the BallTrack and is inserted into it
+	Animation* insertion_animation = nullptr;
+	float saved_angle = 0;
+	float target_angle = 0;
+	uint target_ball_segment_index = 0;
+
+	void set_insertion_animation(const uint& ball_segment_index);
+
 public:
+
+	bool collision_enabled = true;
 
 	PlayerBall(
 		shared_ptr<AssetManager> asset_manager,

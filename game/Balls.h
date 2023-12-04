@@ -81,7 +81,6 @@ struct BallTrackCache {
 
 struct BallSegment {
 	Timer* shift_timer = nullptr;
-	static constexpr float SHIFT_TIME = 0.25F;
 
 	vector<Ball> balls;
 	float position = 0;
@@ -112,6 +111,8 @@ public:
 // logic behind drawing the balls on a track and checking collision with segments of balls
 class BallTrack : public Drawable, public Updatable {
 	static constexpr float BASE_SPEED = 40.0F;
+	static constexpr float SEGMENT_COLLISION_ERROR = 1.0F;
+
 	// pointer to asset_manager for Ball's constructor
 	shared_ptr<AssetManager> asset_manager;
 
@@ -124,6 +125,8 @@ class BallTrack : public Drawable, public Updatable {
 	float get_track_segment_length_sum(const uint& last_segment) const;
 
 public:
+	static constexpr float BALL_INSERTION_TIME = 0.25F;
+
 	// cache for precomputing track segment values (like angle, cosine, sine and length)
 	BallTrackCache cache;
 	// segments with filled balls that move over time
@@ -142,11 +145,24 @@ public:
 
 	// splits a ball segment into two parts by it's index and position
 	// and returns true if the segment was cut and false otherwise
-	bool cut_ball_segment(const uint& ball_segment_index, const float& position);
+	bool cut_ball_segment(const uint& ball_segment_index, const float& position, const float& spacing = 0);
 
 	// connects a ball segment by it's index with the next ball segment
 	void connect_ball_segments(const uint& ball_segment_index);
 
 	// adds a new ball to the specified ball segment index and position
-	void insert_ball(const uint& ball_segment_index, const float& position, BallColor color);
+	void add_insertion_space(const uint& ball_segment_index, const float& position);
+
+	void insert_new_ball(const uint& ball_segment_index, BallColor color);
+
+	// finds a TrackSegment by the end of the BallSegment of given index
+	//
+	// needed for ball insertion animation
+	const TrackSegment& get_track_segment_by_bs_index(const float& ball_segment_index);
+
+	// calculates a vec2 of the destination insertion point,
+	// positioned globally (relative to window)
+	//
+	// needed for ball insertion animation
+	vec2 get_insertion_pos_by_bs_index(const float& ball_segment_index);
 };

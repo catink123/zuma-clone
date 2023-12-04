@@ -201,28 +201,68 @@ void Player::update(const float& delta, GameState& game_state) {
 		rmb_timer->update(delta, game_state);
 }
 
+void PlayerBall::set_insertion_animation(const uint& ball_segment_index) {
+	velocity = 0;
+	collision_enabled = false;
+
+	insertion_animation = 
+		new Animation(
+			BallTrack::BALL_INSERTION_TIME, 
+			TIMING_FUNCTIONS.at(TimingFunctionType::EaseOut)
+		);
+	const TrackSegment& ts = ball_track->get_track_segment_by_bs_index(ball_segment_index);
+
+	saved_angle = global_transform.rotation;
+	global_transform.rotation = 0;
+	local_transform.rotation = saved_angle;
+	target_angle = normalize_angle(ts.angle - saved_angle + 90) - 180;
+	target_ball_segment_index = ball_segment_index;
+}
+
 void PlayerBall::update(const float& delta, GameState& game_state) {
 	// update the inherited Ball
 	Ball::update(delta, game_state);
 	// update position according to velocity
 	global_transform.position += velocity * delta;
 
-	auto collision_data = ball_track->get_collision_data(global_transform.position, Ball::BALL_SIZE / 2);
-	if (collision_data) {
-		uint first_ball_index =
-			static_cast<uint>(
-				ceilf(collision_data->ball_segment_position / Ball::BALL_SIZE)
-			);
+	if (collision_enabled) {
+		auto collision_data = ball_track->get_collision_data(global_transform.position, 2);
+		if (collision_data) {
+			uint first_ball_index =
+				static_cast<uint>(
+					ceilf(collision_data->ball_segment_position / Ball::BALL_SIZE)
+				);
 
-		uint second_ball_index = first_ball_index + 1;
 
-		auto& ball_segment = ball_track->ball_segments[collision_data->ball_segment_index];
+			auto& ball_segment = ball_track->ball_segments[collision_data->ball_segment_index];
 
-		ball_track->insert_ball(collision_data->ball_segment_index, collision_data->ball_segment_position, color);
+			ball_track->add_insertion_space(collision_data->ball_segment_index, collision_data->ball_segment_position);
 
-		velocity = 0;
+			set_insertion_animation(collision_data->ball_segment_index);
+		}
+	}
 
-		entity_manager->schedule_to_delete(this);
+	if (insertion_animation) {
+		if (insertion_animation->is_finished()) {
+			delete insertion_animation;
+			insertion_animation = nullptr;
+
+			ball_track->insert_new_ball(target_ball_segment_index, color);
+
+			entity_manager->schedule_to_delete(this);
+		}
+		else {
+			float progress = insertion_animation->get_progress();
+
+			local_transform.rotation = saved_angle + target_angle * progress;
+
+			vec2 target_position =
+				ball_track->get_insertion_pos_by_bs_index(target_ball_segment_index) - global_transform.position;
+
+			local_transform.position = target_position * progress;
+
+			insertion_animation->update(delta);
+		}
 	}
 }
 
