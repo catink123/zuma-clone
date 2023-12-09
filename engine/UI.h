@@ -44,7 +44,6 @@ enum UIListenerType {
 
 class UIElement : public Drawable, public Updatable {
 protected:
-	vector<shared_ptr<UIElement>> children;
 	shared_ptr<UI> ui;
 	string id;
 	map<UIListenerType, unordered_map<string, function<void(GameState&, UIElement*)>>> listeners = {
@@ -57,12 +56,12 @@ protected:
 	bool is_pressed_l = false;
 	bool is_pressed_r = false;
 
-	bool is_mouse_inside_element(GameState& game_state) const;
 	virtual vec2 get_min_dimensions() const = 0;
 	virtual void shrink_to_fit();
 	virtual void expand_to_fit();
 public:
 	bool fit_content = false;
+	vector<shared_ptr<UIElement>> children;
 
 	UIElement(const string& id, shared_ptr<UI> ui) : id(id), ui(ui) {}
 
@@ -89,6 +88,8 @@ public:
 
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 	virtual void update(const float& delta, GameState& game_state) override;
+
+	bool is_mouse_inside_element(GameState& game_state) const;
 
 	// adds an event listener by type and function pointer
 	// returns a unique id for that listener type in the current UIElement

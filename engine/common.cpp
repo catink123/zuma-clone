@@ -104,3 +104,7 @@ bool Collision::is_circle_on_circle(
 	float distance_between_circles = vec2(first_circle_center, second_circle_center).len();
 	return distance_between_circles <= first_circle_radius + second_circle_radius;
 }
+
+float rand_float() {
+	return static_cast<float>(rand() % 1000000) / 1000000;
+}

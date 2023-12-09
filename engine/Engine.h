@@ -3,6 +3,7 @@
 #undef main
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <iostream>
 #include <unordered_map>
 #include <string>
@@ -16,15 +17,15 @@
 #include "UI.h"
 #include "UIElements/Button.h"
 #include "UIElements/FlexContainer.h"
+#include "../game/Level.h"
 
 using namespace std;
 
 typedef unordered_map<string, shared_ptr<Drawable>> entity_map;
 
-class Engine {
-	static const int WIDTH = 1280;
-	static const int HEIGHT = 720;
+void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetManager> asset_manager, SDL_Renderer* renderer);
 
+class Engine {
 	float max_frame_time = 0.0333333F;
 
 	SDL_Window* window = nullptr;
@@ -34,13 +35,16 @@ class Engine {
 
 	Timer* keyboard_timer = nullptr;
 
-	void load_media();
+	void prepare();
 	void draw();
 	void update();
 	void poll_events();
 	void change_window_size(int w, int h);
 
 public:
+	static const int WIDTH = 1280;
+	static const int HEIGHT = 720;
+
 	shared_ptr<AssetManager> asset_manager;
 	shared_ptr<EntityManager> entity_manager;
 	vector<EventHandler*> event_handlers;

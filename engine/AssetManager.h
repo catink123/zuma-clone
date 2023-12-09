@@ -10,6 +10,7 @@
 #include <deque>
 #include "Texture.h"
 #include "UI.h"
+#include "../game/LevelData.h"
 
 #ifdef NDEBUG
 #define prefix "./"
@@ -85,10 +86,12 @@ public:
 class AssetManager {
 	unordered_map<string, Texture> textures;
 	unordered_map<string, UITexture> ui_textures;
-	unordered_map<string, Level> levels;
+	unordered_map<string, LevelData> levels;
 	unordered_map<string, Font> fonts;
 
-	static bool is_signature_valid(const char* signature_data);
+	static bool is_signature_valid(const unsigned char* signature_data);
+	float convert_float_type(unsigned char* data);
+	uint convert_uint_type(unsigned char* data);
 
 public:
 	AssetManager();
@@ -98,7 +101,7 @@ public:
 	Texture& get_texture(const string& id);
 
 	UITexture& get_ui_texture(const string& id);
-	Level& get_level(const string& id);
+	LevelData& get_level_data(const string& id);
 	Font& get_font(const string& id);
 
 	// loads an image from path or gets it from cache if it is already loaded
@@ -109,8 +112,8 @@ public:
 	void load_ui_texture(const string& id, const string& path, SDL_Renderer* renderer);
 	void unload_ui_texture(const string& id);
 
-	void load_level(const string& id, const string& path, SDL_Renderer* renderer);
-	void unload_level(const string& id);
+	void load_level_data(const string& id, const string& path, SDL_Renderer* renderer);
+	void unload_level_data(const string& id);
 
 	void load_font(const string& id, const string& path, int font_size = 24);
 	void unload_font(const string& id);

@@ -94,7 +94,7 @@ void Player::update(const float& delta, GameState& game_state) {
 	if (w < 0) global_transform.rotation += 180;
 
 	// if the LMB is pressed down, sping back the player and shoot the ball
-	if (game_state.mouse_state.is_lmb_down) {
+	if (game_state.mouse_state.is_lmb_down && !game_state.mouse_state.mouse_on_ui) {
 		// if the texture isn't already the action one, change it
 		if (*get_texture() != action_texture) change_texture(&action_texture);
 
@@ -138,7 +138,7 @@ void Player::update(const float& delta, GameState& game_state) {
 
 	// if the RMB is pressed down, swap primary and secondary bots
 	// and delay the next swap if it's still pressed down
-	if (game_state.mouse_state.is_rmb_down) {
+	if (game_state.mouse_state.is_rmb_down && !game_state.mouse_state.mouse_on_ui) {
 		// if there was no timer, then RMB was just pressed, create a new timer
 		// and allow the swap action right away by setting progress to 100%
 		if (rmb_timer == nullptr) {
@@ -201,7 +201,7 @@ void Player::update(const float& delta, GameState& game_state) {
 		rmb_timer->update(delta, game_state);
 }
 
-void PlayerBall::set_insertion_animation(const uint& ball_segment_index) {
+void PlayerBall::set_insertion_animation(const uint& ball_segment_index, bool inserting_at_end) {
 	velocity = 0;
 	collision_enabled = false;
 
@@ -217,6 +217,7 @@ void PlayerBall::set_insertion_animation(const uint& ball_segment_index) {
 	local_transform.rotation = saved_angle;
 	target_angle = normalize_angle(ts.angle - saved_angle + 90) - 180;
 	target_ball_segment_index = ball_segment_index;
+	is_inserting_at_end = inserting_at_end;
 }
 
 void PlayerBall::update(const float& delta, GameState& game_state) {
@@ -228,7 +229,7 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 	if (collision_enabled) {
 		auto collision_data = ball_track->get_collision_data(global_transform.position, 2);
 		if (collision_data) {
-			uint first_ball_index =
+			uint hit_ball_index =
 				static_cast<uint>(
 					ceilf(collision_data->ball_segment_position / Ball::BALL_SIZE)
 				);
@@ -238,7 +239,7 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 
 			ball_track->add_insertion_space(collision_data->ball_segment_index, collision_data->ball_segment_position);
 
-			set_insertion_animation(collision_data->ball_segment_index);
+			set_insertion_animation(collision_data->ball_segment_index, hit_ball_index == 0);
 		}
 	}
 
@@ -247,7 +248,7 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 			delete insertion_animation;
 			insertion_animation = nullptr;
 
-			ball_track->insert_new_ball(target_ball_segment_index, color);
+			ball_track->insert_new_ball(target_ball_segment_index, color, is_inserting_at_end);
 
 			entity_manager->schedule_to_delete(this);
 		}
@@ -257,7 +258,7 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 			local_transform.rotation = saved_angle + target_angle * progress;
 
 			vec2 target_position =
-				ball_track->get_insertion_pos_by_bs_index(target_ball_segment_index) - global_transform.position;
+				ball_track->get_insertion_pos_by_bs_index(target_ball_segment_index, is_inserting_at_end) - global_transform.position;
 
 			local_transform.position = target_position * progress;
 

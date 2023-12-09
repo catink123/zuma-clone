@@ -54,5 +54,7 @@ public:
 	// sets the current progress with a percentage
 	void set_progress(const float& progress);
 
+	const float& get_current_time() const;
+
 	void update(const float& delta, GameState& game_state) override;
 };

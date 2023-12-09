@@ -1,11 +1,11 @@
 #pragma once
+#include <random>
+#include <cmath>
 #include "../engine/Sprite.h"
 #include "../engine/AssetManager.h"
 #include "../engine/EntityManager.h"
 #include "GameState.h"
 #include "Balls.h"
-#include <random>
-#include <cmath>
 
 // PlayerBall is used with a Player
 // it has a velocity parameter for the PlayerBall to be able to shoot
@@ -22,8 +22,9 @@ class PlayerBall : public Ball {
 	float saved_angle = 0;
 	float target_angle = 0;
 	uint target_ball_segment_index = 0;
+	bool is_inserting_at_end = false;
 
-	void set_insertion_animation(const uint& ball_segment_index);
+	void set_insertion_animation(const uint& ball_segment_index, bool inserting_at_end);
 
 public:
 

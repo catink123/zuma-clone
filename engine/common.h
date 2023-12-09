@@ -1,6 +1,10 @@
 #pragma once
 #include <utility>
+#include <random>
 #include <SDL.h>
+
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 720;
 
 typedef uint16_t ushort;
 typedef uint32_t uint;
@@ -78,3 +82,6 @@ public:
 		const float& second_circle_radius
 	);
 };
+
+// gives a random float between 0 and 1
+float rand_float();

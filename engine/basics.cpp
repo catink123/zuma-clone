@@ -45,3 +45,5 @@ void Timer::set_progress(const float& progress) {
 void Timer::update(const float& delta, GameState&) {
 	current_time += delta;
 }
+
+const float& Timer::get_current_time() const { return current_time; }

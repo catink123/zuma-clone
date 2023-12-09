@@ -46,9 +46,10 @@ void UIElement::shrink_to_fit() {
 }
 
 void UIElement::update(const float& delta, GameState& game_state) {
-	const MouseState& m_state = game_state.mouse_state;
+	MouseState& m_state = game_state.mouse_state;
 	const KeyboardState& k_state = game_state.keyboard_state;
 	bool mouse_inside = is_mouse_inside_element(game_state);
+	m_state.mouse_on_ui = m_state.mouse_on_ui || mouse_inside;
 
 	if (m_state.lmb_just_pressed && mouse_inside) {
 		is_pressed_l = true;

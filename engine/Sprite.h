@@ -12,6 +12,8 @@ enum HorizontalAlignment {
 	Left, Center, Right
 };
 
+using namespace std;
+
 class Sprite : public Drawable {
 protected:
 	Texture* texture;

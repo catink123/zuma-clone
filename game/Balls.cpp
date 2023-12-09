@@ -1,4 +1,4 @@
-#include "../game/Balls.h"
+#include "Balls.h"
 
 Ball::Ball(
 	shared_ptr<AssetManager> asset_manager,
@@ -149,10 +149,10 @@ BallTrack::BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_
 	ball_segments.push_back(segment);
 
 	// temporary
-	//ball_segments[0].position = -cache.total_length;
+	ball_segments[0].position = -(static_cast<float>(ball_segments[0].get_total_length()));
 }
 
-uint BallTrack::get_track_segment_by_position(const float& position) const {
+optional<uint> BallTrack::get_track_segment_by_position(const float& position) const {
 	uint segment_index = 0;
 	// go through the track segments and add up the total length from the start
 	// until the given position is within the current total length, which means
@@ -162,7 +162,7 @@ uint BallTrack::get_track_segment_by_position(const float& position) const {
 		segment_index++;
 		// if we hit the end, return the last segment's index
 		if (segment_index >= cache.segments.size()) {
-			return --segment_index;
+			return nullopt;
 		}
 
 		current_length += cache.segments[segment_index].length;
@@ -174,13 +174,17 @@ vector<uint> BallTrack::get_track_segments_from_ball_segment(const BallSegment& 
 	vector<uint> result;
 
 	// track segment index of the start of given ball segment
-	uint start_track_index = get_track_segment_by_position(ball_segment.position);
+	optional<uint> start_track_index = get_track_segment_by_position(ball_segment.position);
+	if (start_track_index == nullopt)
+		start_track_index = 0;
 	// track segment index of the end of given ball segment
-	uint end_track_index = get_track_segment_by_position(ball_segment.position + ball_segment.get_total_length());
+	optional<uint> end_track_index = get_track_segment_by_position(ball_segment.position + ball_segment.get_total_length());
+	if (end_track_index == nullopt)
+		end_track_index = cache.segments.size() - 1;
 
 	// every track segment index between the start and end ones 
 	// will also contain the given ball_segment, so we add the resulting range
-	for (int i = start_track_index; i <= end_track_index; i++)
+	for (int i = start_track_index.value(); i <= end_track_index.value(); i++)
 		result.push_back(i);
 	
 	return result;
@@ -205,25 +209,42 @@ void BallTrack::draw(SDL_Renderer* renderer, const RendererState& renderer_state
 		// and each of the balls of the segments
 		for (const Ball& ball : segment.balls)
 			// and draw the ball
-			ball.draw(renderer, renderer_state);
+			if (ball.show)
+				ball.draw(renderer, renderer_state);
+
+	for (const BallParticles& bp : ball_particles)
+		bp.draw(renderer, renderer_state);
 }
 
 void BallTrack::update(const float& delta, GameState& game_state) {
 	// go through each ball segment
 	for (int i = 0; i < ball_segments.size(); i++) {
 		BallSegment& segment = ball_segments[i];
+
+		if (segment.balls.size() == 0) {
+			continue;
+		}
+
 		// and each of the balls of the segments
 		for (int i = 0; i < segment.balls.size(); i++) {
 			// calculate the current ball's position relative to the start of the track
 			float ball_absolute_position = segment.position + i * Ball::BALL_SIZE;
 			// find the track segment the ball is in
-			uint track_segment_index = get_track_segment_by_position(ball_absolute_position);
-			const TrackSegment& track_segment = cache.segments[track_segment_index];
+			optional<uint> track_segment_index = get_track_segment_by_position(ball_absolute_position);
+			if (track_segment_index == nullopt) {
+				segment.balls[i].show = false;
+				continue;
+			}
+			else {
+				segment.balls[i].show = true;
+			}
+
+			const TrackSegment& track_segment = cache.segments[track_segment_index.value()];
 
 			// get the track's length up to the previous track segment...
 			float total_sum = 0;
-			if (track_segment_index > 0)
-				total_sum = get_track_segment_length_sum(track_segment_index - 1);
+			if (track_segment_index.value() > 0)
+				total_sum = get_track_segment_length_sum(track_segment_index.value() - 1);
 
 			// ... to find the ball's position relative to the track segment it's in
 			float ball_segment_position = ball_absolute_position - total_sum;
@@ -235,7 +256,7 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			// the path it has rolled from the track's start
 			ball.set_ball_angle(ball_absolute_position);
 
-			vec2 previous_track_end_point = cache.points[track_segment_index];
+			vec2 previous_track_end_point = cache.points[track_segment_index.value()];
 
 			const float& angle_cos = track_segment.angle_cos;
 			const float& angle_sin = track_segment.angle_sin;
@@ -250,9 +271,28 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			ball.update(delta, game_state);
 		}
 
+		if (is_failing) {
+			bool are_segments_left_on_screen = false;
+			for (BallSegment& seg : ball_segments) {
+				if (seg.position < cache.total_length) {
+					are_segments_left_on_screen = true;
+					break;
+				}
+			}
+			if (are_segments_left_on_screen)
+				speed_multiplier += 2;
+			else {
+				game_state.section = DeathScreen;
+			}
+		}
+
 		if (segment.shift_timer) {
 			if (segment.shift_timer->is_done()) {
 				segment.is_shifting = false;
+
+				segment.shift_timer->reset(true);
+				float overrun = segment.shift_timer->get_current_time();
+				segment.position -= (Ball::BALL_SIZE / BallTrack::BALL_INSERTION_TIME) * overrun;
 
 				delete segment.shift_timer;
 				segment.shift_timer = nullptr;
@@ -271,18 +311,89 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 
 		segment.position += delta * total_speed;
 
+		if (is_failing)
+			break;
+
 		// check if the current segment collides with the next one
 
-		// if we can select a next segment, check if it collides
+		// if we can select a next segment, check if it collides or
+		// if the last ball of current segment is the same as the first of the next one
 		if (i < ball_segments.size() - 1) {
 			BallSegment& next_segment = ball_segments[i + 1];
+			if (next_segment.balls.size() == 0)
+				continue;
+
+			bool adjacent_ball_same = segment.balls.back().color == next_segment.balls.front().color;
+			if (adjacent_ball_same)
+				segment.speed += SEGMENT_FOLLOW_ACCELERATION;
 
 			// if the last ball of the current segment (position + length) touches the next segment with set error,
 			// combine both ball segments into one
 			if (segment.position + segment.get_total_length() >= next_segment.position + SEGMENT_COLLISION_ERROR) {
-				connect_ball_segments(i);
+				connect_ball_segments(i, adjacent_ball_same);
 			}
 		}
+
+		// check if we have three or more balls of the same color in a row
+		// and if so, break them
+
+		BallColor saved_color = segment.balls[0].color;
+		uint saved_ball_index = 0;
+		uint same_color_count = 1;
+		for (int i = 1; i < segment.balls.size(); i++) {
+			BallColor current_color = segment.balls[i].color;
+			if (saved_color == current_color)
+				same_color_count++;
+			else if (same_color_count >= 3)
+				break;
+			else {
+				saved_color = current_color;
+				saved_ball_index = i;
+				same_color_count = 1;
+			}
+		}
+
+		// if we found a string of 3 or more balls, break them
+		if (same_color_count >= 3) {
+			auto start_it = segment.balls.begin() + saved_ball_index;
+			auto end_it = segment.balls.begin() + saved_ball_index + same_color_count;
+
+			// add breaking particles
+			for (int i = saved_ball_index; i < saved_ball_index + same_color_count; i++) {
+				const Ball& ball = segment.balls[i];
+
+				ball_particles.push_back(
+					move(
+						BallParticles(
+							ball.global_transform.position, 
+							ball.color, 
+							&asset_manager->get_texture("ball_particle")
+						)
+					)
+				);
+			}
+
+			game_state.game_score += same_color_count * 100;
+
+			// delete the string of balls
+			segment.balls.erase(start_it, end_it);
+			
+			// leave a blank space in place of them
+			cut_ball_segment(i, saved_ball_index * Ball::BALL_SIZE, Ball::BALL_SIZE * same_color_count);
+		}
+
+		// if some segment is out of the track length, we're dead
+		if (segment.position + segment.get_total_length() > cache.total_length) {
+			is_failing = true;
+		}
+	}
+
+	for (int i = 0; i < ball_particles.size(); i++) {
+		BallParticles& bp = ball_particles[i];
+		bp.update(delta, game_state);
+
+		if (bp.is_done())
+			ball_particles.erase(ball_particles.begin() + i);
 	}
 }
 
@@ -293,8 +404,8 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 	// go through all the track segments...
 	for (int i = 0; i < cache.segments.size(); i++) {
 		const TrackSegment& segment = cache.segments[i];
-		const vec2& start_point = cache.points[i];
-		const vec2& end_point = cache.points[i + 1];
+		vec2 start_point = cache.points[i];
+		vec2 end_point = cache.points[i + 1];
 
 		// ... and find if the given point with radius (circle) is on the track's line
 		if (Collision::is_circle_on_line(start_point, end_point, point, point_radius)) {
@@ -329,7 +440,10 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 			// get the collision position relative to the start of the ball segment
 			float ball_segment_collision_position = absolute_collision_position - ball_segment.position;
 			// if the relative collision position is within the ball_segment's length, a collision happened
-			if (ball_segment_collision_position >= 0 && ball_segment_collision_position <= ball_segment.get_total_length()) {
+			if (
+				ball_segment_collision_position >= -(static_cast<float>(Ball::BALL_SIZE) / 2) && 
+				ball_segment_collision_position <= ball_segment.get_total_length() + (static_cast<float>(Ball::BALL_SIZE) / 2)
+			) {
 				collision_data.ball_segment_index = i;
 				collision_data.ball_segment_position = ball_segment_collision_position;
 
@@ -348,7 +462,7 @@ bool BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& po
 	// calculate the index of the last ball that will be in the first ball segment
 	uint last_ball_index = ceilf(position / Ball::BALL_SIZE);
 
-	if (last_ball_index >= ball_segments[ball_segment_index].balls.size() || last_ball_index < 0)
+	if (last_ball_index >= ball_segments[ball_segment_index].balls.size() || last_ball_index <= 0)
 		return false;
 
 	ball_segments.insert(ball_segments.begin() + ball_segment_index + 1, BallSegment());
@@ -383,13 +497,16 @@ void BallTrack::add_insertion_space(const uint& ball_segment_index, const float&
 		ball_segments[ball_segment_index].shift();
 }
 
-void BallTrack::connect_ball_segments(const uint& ball_segment_index) {
+void BallTrack::connect_ball_segments(const uint& ball_segment_index, bool inherit_seconds_speed) {
 	// if the segment to connect is the last one, there is no
 	// next one, return early in that case
 	if (ball_segment_index >= ball_segments.size()) return;
 
 	auto& first_ball_segment = ball_segments[ball_segment_index];
 	auto& second_ball_segment = ball_segments[ball_segment_index + 1];
+
+	if (inherit_seconds_speed)
+		first_ball_segment.speed = second_ball_segment.speed;
 
 	// move all balls from the second segment to the end of the first one
 	first_ball_segment.balls.insert(
@@ -404,35 +521,43 @@ void BallTrack::connect_ball_segments(const uint& ball_segment_index) {
 const TrackSegment& BallTrack::get_track_segment_by_bs_index(const float& ball_segment_index) {
 	auto& ball_segment = ball_segments[ball_segment_index];
 
-	uint track_segment_index = get_track_segment_by_position(
+	optional<uint> track_segment_index = get_track_segment_by_position(
 		ball_segment.position + ball_segment.get_total_length()
 	);
 
-	return cache.segments[track_segment_index];
+	if (track_segment_index == nullopt)
+		return cache.segments.back();
+	else
+		return cache.segments[track_segment_index.value()];
 }
 
-vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index) {
+vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index, bool inserting_at_end) {
 	auto& ball_segment = ball_segments[ball_segment_index];
 
 	// calculate the ball's position relative to the start of the track
-	float ball_absolute_position = ball_segment.position + ball_segment.get_total_length();
+	float ball_absolute_position = ball_segment.position;
+	if (!inserting_at_end)
+		ball_absolute_position += ball_segment.get_total_length();
 
 	// find the track segment the ball is in
-	uint track_segment_index = get_track_segment_by_position(ball_absolute_position);
-	const TrackSegment& track_segment = cache.segments[track_segment_index];
+	optional<uint> track_segment_index = get_track_segment_by_position(ball_absolute_position);
+	if (track_segment_index == nullopt)
+		track_segment_index = cache.segments.size() - 1;
+
+	const TrackSegment& track_segment = cache.segments[track_segment_index.value()];
 
 	// get the track's length up to the previous track segment...
 	float total_sum = 0;
-	if (track_segment_index > 0)
-		total_sum = get_track_segment_length_sum(track_segment_index - 1);
+	if (track_segment_index.value() > 0)
+		total_sum = get_track_segment_length_sum(track_segment_index.value() - 1);
 
 	// ... to find the ball's position relative to the track segment it's in
 	float ball_segment_position = ball_absolute_position - total_sum;
 
-	vec2 result;
+	vec2 result = cache.points[0];
 
 	// sum up global position for all track segments up to the previous one
-	for (int i = 0; i < track_segment_index; i++) {
+	for (int i = 0; i < track_segment_index.value(); i++) {
 		const TrackSegment& current_track_segment = cache.segments[i];
 		result.x += current_track_segment.length * current_track_segment.angle_cos;
 		result.y += current_track_segment.length * current_track_segment.angle_sin;
@@ -442,12 +567,23 @@ vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index) {
 	result.x += ball_segment_position * track_segment.angle_cos;
 	result.y += ball_segment_position * track_segment.angle_sin;
 
+	if (inserting_at_end) {
+		result.x -= Ball::BALL_SIZE * track_segment.angle_cos;
+		result.y -= Ball::BALL_SIZE * track_segment.angle_sin;
+	}
+
 	return result;
 }
 
-void BallTrack::insert_new_ball(const uint& ball_segment_index, BallColor color) {
+void BallTrack::insert_new_ball(const uint& ball_segment_index, BallColor color, bool inserting_at_end) {
 	BallSegment& segment = ball_segments[ball_segment_index];
 
 	Ball new_ball(asset_manager, color);
-	segment.balls.push_back(new_ball);
+
+	if (inserting_at_end) {
+		segment.balls.insert(segment.balls.begin(), new_ball);
+		segment.position -= Ball::BALL_SIZE;
+	}
+	else
+		segment.balls.push_back(new_ball);
 }

@@ -24,6 +24,8 @@ struct EntityManager {
 	section_map section_map = {
 		{ InLevel, {} },
 		{ InMenu, {} },
+		{ DeathScreen, {} },
+		{ LevelSelection, {} },
 		{ None, {} }
 	};
 

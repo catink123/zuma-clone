@@ -1,5 +1,45 @@
 #include "Engine.h"
 
+void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetManager> asset_manager, SDL_Renderer* renderer) {
+	auto game_ui =
+		entity_manager->add_entity(
+			"game_ui",
+			make_shared<UI>(renderer),
+			InLevel
+		);
+
+	auto game_flex =
+		make_shared<FlexContainer>(
+			"game_strip",
+			game_ui, BoundingBox(10),
+			10, X,
+			vec2(), vec2(1280, 0)
+		);
+
+	auto score =
+		make_shared<Text>("score", game_ui, "Score: 0", &asset_manager->get_font("medieval_button_font"), SDL_Color({ 255, 255, 255 }));
+
+	auto pause_button =
+		make_shared<Button>(
+			"pause_button", game_ui, 
+			&asset_manager->get_ui_texture("medieval_button"), 
+			"Exit", 
+			&asset_manager->get_font("medieval_button_font"), 
+			SDL_Color({ 65, 45, 10 }), BoundingBox(20, 10)
+		);
+
+	pause_button->add_event_listener(
+		LMBUp, "pause_game",
+		[](GameState& game_state, auto) {
+			game_state.section = InMenu;
+		}
+	);
+
+	game_flex->add_children({ pause_button, score });
+	game_flex->alignment = FlexContainer::Alignment::Middle;
+	game_ui->root_element = game_flex;
+}
+
 Engine::Engine() {
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -43,15 +83,19 @@ Engine::Engine() {
 		printf("Couldn't initialize SDL_ttf! Error: %s\n", TTF_GetError());
 	}
 
+	Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096);
+
+	Mix_Chunk* snd = Mix_LoadWAV("../../../assets/ball_break.wav");
+
+	Mix_PlayChannel(-1, snd, -1);
+
 	SDL_DisplayMode current_display_mode;
 	SDL_GetCurrentDisplayMode(0, &current_display_mode);
 	max_frame_time = 1 / static_cast<float>(current_display_mode.refresh_rate);
 
 	asset_manager = make_shared<AssetManager>();
 	entity_manager = make_shared<EntityManager>();
-	load_media();
-
-	//set_fullscreen(true);
+	prepare();
 }
 
 Engine::~Engine() {
@@ -106,9 +150,19 @@ void Engine::update() {
 		SDL_Delay(static_cast<uint>((max_frame_time - delta) * 1000));
 	}
 
+	// reset mouse_on_ui state to prepare for the next UI update
+	game_state.mouse_state.mouse_on_ui = false;
+
 	vector<shared_ptr<Updatable>> updatables = entity_manager->get_entities_by_section_and_type<Updatable>(game_state.section);
 	for (auto updatable : updatables) {
 		updatable->update(delta, game_state);
+	}
+
+	// update death screen text
+	if (game_state.section == DeathScreen) {
+		auto death_ui = entity_manager->get_entity_by_name<UI>("death_ui");
+		auto text = dynamic_pointer_cast<Text>(death_ui->root_element->children[0]);
+		text->set_content(string("You failed. Score: ") + to_string(game_state.game_score));
 	}
 
 	// process keyboard
@@ -141,7 +195,7 @@ void Engine::update() {
 	game_state.keyboard_state.reset_frame_state();
 }
 
-void Engine::load_media() {
+void Engine::prepare() {
 	asset_manager->load_texture("player_normal", "assets/player_normal.catex", renderer);
 	asset_manager->load_texture("player_action", "assets/player_action.catex", renderer);
 	asset_manager->load_texture("ball_red", "assets/ball_red.catex", renderer);
@@ -151,50 +205,12 @@ void Engine::load_media() {
 	asset_manager->load_texture("ball_yellow", "assets/ball_yellow.catex", renderer);
 	asset_manager->load_texture("ball_gray", "assets/ball_gray.catex", renderer);
 	asset_manager->load_texture("ball_sheen", "assets/ball_sheen.catex", renderer);
-	asset_manager->load_ui_texture("button", "assets/button.cauit", renderer);
-	asset_manager->load_ui_texture("button_transparent", "assets/button_transparent.cauit", renderer);
-	asset_manager->load_font("test24", "assets/Josefin.ttf");
-	asset_manager->load_font("test14", "assets/Josefin.ttf", 14);
+	asset_manager->load_texture("ball_particle", "assets/ball_particle.catex", renderer);
 
 	asset_manager->load_ui_texture("medieval_button", "assets/medieval_button.cauit", renderer);
 	asset_manager->load_font("medieval_button_font", "assets/BerkshireSwash-Regular.ttf", 24);
-
-	vector<vec2> track_points = {
-		vec2(0, 0),
-		vec2(320, 360),
-		vec2(700, 620),
-		vec2(880, 620),
-		vec2(960, 360),
-		vec2(1280, 0)
-	};
-
-	auto ball_track =
-		entity_manager->add_entity(
-			"ball_track",
-			make_shared<BallTrack>(
-				track_points,
-				asset_manager
-			),
-			InLevel
-		);
-
-	entity_manager->add_entity(
-		"player", 
-		make_shared<Player>(
-			asset_manager->get_texture("player_normal"), 
-			asset_manager->get_texture("player_action"),
-			asset_manager,
-			entity_manager,
-			ball_track
-		),
-		InLevel
-	);
-
-	shared_ptr<Player> player = entity_manager->get_entity_by_name<Player>("player");
-	if (player != nullptr) {
-		player->local_transform.scale = 0.75;
-		player->global_transform.position = vec2(WIDTH / 2, HEIGHT / 2);
-	}
+	asset_manager->load_font("medieval_button_font_large", "assets/BerkshireSwash-Regular.ttf", 48);
+	asset_manager->load_level_data("level1", "assets/level1.calev", renderer);
 
 	add_event_handler(new MouseHandler());
 	add_event_handler(new KeyboardHandler());
@@ -217,27 +233,12 @@ void Engine::load_media() {
 			vec2(10, 10)
 		);
 
-	play_button->fit_content = true;
-
 	play_button->add_event_listener(
 		LMBUp, "change_to_inlevel", 
 		[](GameState& game_state, UIElement* el) {
-			game_state.section = InLevel;
+			game_state.section = LevelSelection;
 		}
 	);
-
-	auto settings_button =
-		make_shared<Button>(
-			"settings_button",
-			ui,
-			&asset_manager->get_ui_texture("medieval_button"),
-			"Settings",
-			&asset_manager->get_font("medieval_button_font"),
-			SDL_Color({ 65, 45, 10 }),
-			BoundingBox(25, 15),
-			vec2(10, 10)
-		);
-	settings_button->fit_content = true;
 
 	auto exit_button =
 		make_shared<Button>(
@@ -250,7 +251,6 @@ void Engine::load_media() {
 			BoundingBox(25, 15),
 			vec2(10, 10)
 		);
-	exit_button->fit_content = true;
 
 	exit_button->add_event_listener(
 		LMBUp,
@@ -271,51 +271,104 @@ void Engine::load_media() {
 			vec2(500, 300)
 		);
 
-	flex->fit_content = true;
-	flex->add_children({ play_button, settings_button, exit_button });
-	flex->alignment = FlexContainer::Alignment::Start;
+	flex->add_children({ play_button, exit_button });
 
 	ui->root_element = flex;
 
-	auto game_ui =
+	auto death_ui = entity_manager->add_entity(
+		"death_ui",
+		make_shared<UI>(
+			renderer
+		),
+		DeathScreen
+	);
+
+	auto death_flex = 
+		make_shared<FlexContainer>(
+			"death_flex",
+			ui,
+			BoundingBox(10),
+			10,
+			Y,
+			vec2(),
+			vec2(500, 200)
+		);
+
+	death_ui->root_element = death_flex;
+	
+	auto death_score_text = 
+		make_shared<Text>("death_score", death_ui, "Score: 0", &asset_manager->get_font("medieval_button_font_large"), SDL_Color({ 0, 0, 0 }));
+
+	auto death_go_back =
+		make_shared<Button>(
+				"exit_button",
+				ui,
+				&asset_manager->get_ui_texture("medieval_button"),
+				"Go to Menu",
+				&asset_manager->get_font("medieval_button_font"),
+				SDL_Color({ 65, 45, 10 }),
+				BoundingBox(25, 15),
+				vec2(10, 10)
+			);
+
+	death_go_back->add_event_listener(LMBUp, "go_to_menu", [](GameState& gs, auto) {
+		gs.section = InMenu;
+	});
+
+	death_flex->add_children({ death_score_text, death_go_back });
+
+	auto level_select_ui = entity_manager->add_entity(
+		"level_select_ui",
+		make_shared<UI>(
+			renderer
+		),
+		LevelSelection
+	);
+
+	auto ls_flex = 
+		make_shared<FlexContainer>(
+			"ls_flex",
+			ui,
+			BoundingBox(10),
+			10,
+			Y,
+			vec2(),
+			vec2(500, 200)
+		);
+
+	level_select_ui->root_element = ls_flex;
+	
+	auto ls1 =
+		make_shared<Button>(
+				"ls1",
+				ui,
+				&asset_manager->get_ui_texture("medieval_button"),
+				"Level 1",
+				&asset_manager->get_font("medieval_button_font"),
+				SDL_Color({ 65, 45, 10 }),
+				BoundingBox(25, 15),
+				vec2(10, 10)
+			);
+
+	ls1->add_event_listener(LMBUp, "select_level", [=](GameState& gs, auto) {
+		entity_manager->remove_entity("level");
 		entity_manager->add_entity(
-			"game_ui",
-			make_shared<UI>(renderer),
+			"level",
+			make_shared<Level>(
+				&asset_manager->get_level_data("level1"),
+				asset_manager, entity_manager, renderer, create_level_ui
+			),
 			InLevel
 		);
 
-	auto game_flex =
-		make_shared<FlexContainer>(
-			"game_strip",
-			game_ui, BoundingBox(10),
-			10, X,
-			vec2(), vec2(1280, 0)
-		);
+		gs.section = InLevel;
+	});
 
-	auto score =
-		make_shared<Text>("score", game_ui, "Score: 0", &asset_manager->get_font("medieval_button_font"));
+	ls_flex->add_children({ ls1 });
 
-	auto pause_button =
-		make_shared<Button>(
-			"pause_button", game_ui, 
-			&asset_manager->get_ui_texture("medieval_button"), 
-			"Pause", 
-			&asset_manager->get_font("medieval_button_font"), 
-			SDL_Color({ 65, 45, 10 }), BoundingBox(20, 10)
-		);
+	game_state.section = InMenu;
 
-	pause_button->add_event_listener(
-		LMBUp, "pause_game",
-		[](GameState& game_state, auto) {
-			game_state.section = InMenu;
-		}
-	);
 
-	game_flex->add_children({ pause_button, score });
-	game_flex->alignment = FlexContainer::Alignment::Middle;
-	game_ui->root_element = game_flex;
-
-	game_state.section = InLevel;
 }
 
 void Engine::change_window_size(int w, int h) {

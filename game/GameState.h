@@ -1,10 +1,11 @@
 #pragma once
 #include "../engine/common.h"
-#include "Level.h"
+//#include "Level.h"
 
 struct MouseState {
 	vec2 previous_mouse_pos = vec2();
 	vec2 mouse_pos = vec2();
+	bool mouse_on_ui = false;
 	bool is_lmb_down = false;
 	bool is_rmb_down = false;
 
@@ -42,18 +43,29 @@ struct RendererState {
 enum GameSection {
 	None,
 	InMenu,
-	InLevel
+	InLevel,
+	DeathScreen,
+	LevelSelection
 };
 
 class GameState {
 public:
 	bool is_exiting = false;
 
-	Level* level = nullptr;
+	uint game_score = 0;
 	GameSection section = None;
 	MouseState mouse_state;
 	KeyboardState keyboard_state;
 	RendererState renderer_state;
 
 	void exit() { is_exiting = true; }
+	void save_settings() {
+		//auto io = SDL_RWFromFile("settings.dat", "wb");
+		//SDL_RWwrite(io, );
+		// to be filled...
+	}
+
+	void load_settings() {
+		// to be filled...
+	}
 };

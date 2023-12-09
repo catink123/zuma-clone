@@ -1,7 +1,8 @@
 # include SDL2 and SDL2_image
-list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_image-2.6.3")
 list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2-2.28.3")
+list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_image-2.6.3")
 list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_ttf-2.20.2")
+list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_mixer-2.6.3")
 
 cmake_minimum_required(VERSION 3.8)
 
@@ -51,7 +52,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	engine/UIElements/Text.h
 	engine/UIElements/Button.h
 	engine/UIElements/FlexContainer.h
-)
+ "game/LevelData.h")
 
 # header files directories for the given executable
 # target_include_directories(${PROJECT_NAME} PRIVATE engine game)
@@ -73,3 +74,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
 find_package(SDL2_ttf REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_ttf::SDL2_ttf)
+
+# include SDL2_mixer
+
+find_package(SDL2_mixer REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_MIXER_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_mixer::SDL2_mixer)
