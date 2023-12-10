@@ -8,6 +8,7 @@
 #include "../engine/Sprite.h"
 #include "../engine/AssetManager.h"
 #include "../engine/EntityManager.h"
+#include "../engine/SoundManager.h"
 #include <random>
 
 enum BallColor {
@@ -205,15 +206,22 @@ public:
 class BallTrack : public Drawable, public Updatable {
 	static constexpr float BASE_SPEED = 40.0F;
 	static constexpr float SEGMENT_COLLISION_ERROR = 1.0F;
-	static constexpr float SEGMENT_FOLLOW_ACCELERATION = 5.0F;
+	static constexpr float SEGMENT_FOLLOW_ACCELERATION = 400.0F;
+	static constexpr float FAIL_SEGMENT_ACCELERATION = 50.0F;
+	static const uint SCORE_PER_BALL = 50;
 
+	// if some ball hits the death window, this is set to true...
 	bool is_failing = false;
+	// ... and this is set to true when all the balls are gone
+	bool is_fading_out_to_screen = false;
 
 	// pointer to asset_manager for Ball's constructor
 	shared_ptr<AssetManager> asset_manager;
 
 	// ball breaking particles
 	vector<BallParticles> ball_particles;
+
+	unique_ptr<Sprite> death_window = nullptr;
 
 	// find track segment's index by a given ball segment's position
 	optional<uint> get_track_segment_by_position(const float& position) const;

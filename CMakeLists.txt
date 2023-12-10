@@ -48,11 +48,15 @@ target_sources(${PROJECT_NAME} PRIVATE
 	game/Balls.h
 	game/Player.cpp
 	game/Player.h
+	game/LevelData.h
+	engine/SoundManager.h
+	engine/Fade.h
+	engine/Audio.h
 
 	engine/UIElements/Text.h
 	engine/UIElements/Button.h
 	engine/UIElements/FlexContainer.h
- "game/LevelData.h")
+)
 
 # header files directories for the given executable
 # target_include_directories(${PROJECT_NAME} PRIVATE engine game)

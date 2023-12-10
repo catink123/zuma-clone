@@ -46,6 +46,13 @@ Font& AssetManager::get_font(const string& id) {
 	return fonts.at(id);
 }
 
+Audio& AssetManager::get_audio(const string& id) {
+	if (audio.find(id) == audio.end())
+		throw AMAssetNotRegisteredException();
+
+	return audio.at(id);
+}
+
 bool AssetManager::is_signature_valid(const unsigned char* signature_data) {
 	return signature_data[0] == 'C' && signature_data[1] == 'A' && signature_data[2] == 'A' && signature_data[3] == 'S' && signature_data[4] == 'S';
 }
@@ -57,6 +64,7 @@ void AssetManager::load_texture(const string& id, const string& path, SDL_Render
 	// construct the path string
 	auto constructed_path = string(prefix) + path;
 	auto c_path_str = constructed_path.c_str();
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Loading a texture with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
 
 	// open file for reading in binary form
 	SDL_RWops* io = SDL_RWFromFile(c_path_str, "rb");
@@ -76,7 +84,7 @@ void AssetManager::load_texture(const string& id, const string& path, SDL_Render
 	// if the signature read isn't valid (first 5 bytes don't match the asset signature),
 	// log and throw an error
 	if (!is_signature_valid(signature_data)) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Signature of loaded file is invalid!");
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Signature of loaded file is invalid!\n");
 		throw AMAssetLoadException("invalid signature");
 	}
 
@@ -109,6 +117,8 @@ void AssetManager::load_texture(const string& id, const string& path, SDL_Render
 		throw AMAssetLoadException(sdl_error);
 	}
 
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
 	// encapsulate raw texture pointer, it's width and height in a Texture object
 	Texture t_data(surface->w, surface->h, texture);
 
@@ -121,6 +131,7 @@ void AssetManager::load_texture(const string& id, const string& path, SDL_Render
 void AssetManager::unload_texture(const string& id) {
 	// if the texture wasn't found
 	if (textures.find(id) == textures.end()) return;
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Unloading a texture with id '%s'...\n", id.c_str());
 
 	// we don't need the texture anymore, destroy it
 	SDL_DestroyTexture(textures.at(id).get_raw());
@@ -140,6 +151,7 @@ void AssetManager::load_ui_texture(const string& id, const string& path, SDL_Ren
 	// construct the path string
 	auto constructed_path = string(prefix) + path;
 	auto c_path_str = constructed_path.c_str();
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Loading a UI texture with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
 
 	// open file for reading in binary form
 	SDL_RWops* io = SDL_RWFromFile(c_path_str, "rb");
@@ -231,6 +243,7 @@ void AssetManager::load_ui_texture(const string& id, const string& path, SDL_Ren
 void AssetManager::unload_ui_texture(const string& id) {
 	// if the texture wasn't found
 	if (ui_textures.find(id) == ui_textures.end()) return;
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Unloading a UI texture with id '%s'...\n", id.c_str());
 
 	// we don't need the texture anymore, destroy it
 	SDL_DestroyTexture(ui_textures.at(id).get_raw());
@@ -252,6 +265,8 @@ void AssetManager::load_level_data(const string& id, const string& path, SDL_Ren
 	// construct the path string
 	auto constructed_path = string(prefix) + path;
 	auto c_path_str = constructed_path.c_str();
+
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Loading a level data with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
 
 	// open file for reading in binary form
 	SDL_RWops* io = SDL_RWFromFile(c_path_str, "rb");
@@ -354,6 +369,7 @@ void AssetManager::load_level_data(const string& id, const string& path, SDL_Ren
 void AssetManager::unload_level_data(const string& id) {
 	// if the texture wasn't found
 	if (levels.find(id) == levels.end()) return;
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Unloading level data with id '%s'...\n", id.c_str());
 
 	// we don't need the texture anymore, unload it
 	unload_texture(id);
@@ -369,6 +385,7 @@ void AssetManager::load_font(const string& id, const string& path, int font_size
 	// construct the path string
 	auto constructed_path = string(prefix) + path;
 	auto c_path_str = constructed_path.c_str();
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Loading a font with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
 
 	try {
 		Font font(c_path_str, font_size);
@@ -382,6 +399,39 @@ void AssetManager::load_font(const string& id, const string& path, int font_size
 
 void AssetManager::unload_font(const string& id) {
 	if (fonts.find(id) == fonts.end()) return;
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Unloading a font with id '%s'...\n", id.c_str());
 
 	fonts.erase(id);
+}
+
+void AssetManager::load_audio(const string& id, const string& path, AudioType audio_type) {
+	// the asset is already loaded, there's no need to load it again
+	if (audio.find(id) != audio.end()) return;
+
+	// construct the path string
+	auto constructed_path = string(prefix) + path;
+	auto c_path_str = constructed_path.c_str();
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Loading audio with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
+
+	Mix_Chunk* chunk = nullptr;
+	Mix_Music* music = nullptr;
+	if (audio_type == Sound)
+		chunk = Mix_LoadWAV(c_path_str);
+	else
+		music = Mix_LoadMUS(c_path_str);
+
+	if (chunk == nullptr && music == nullptr) {
+		auto sdl_error = Mix_GetError();
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load audio %s! Error: %s\n", c_path_str, sdl_error);
+		throw AMAssetLoadException(sdl_error);
+	}
+
+	if (audio_type == Sound) {
+		Audio audio_obj(chunk);
+		audio.insert({ id, move(audio_obj) });
+	}
+	else {
+		Audio audio_obj(music);
+		audio.insert({ id, move(audio_obj) });
+	}
 }

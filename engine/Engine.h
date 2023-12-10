@@ -41,6 +41,12 @@ class Engine {
 	void poll_events();
 	void change_window_size(int w, int h);
 
+	void prepare_death_ui();
+	void prepare_win_ui();
+	void prepare_menu_ui();
+	void prepare_level_select_ui();
+	void prepare_settings_ui();
+
 public:
 	static const int WIDTH = 1280;
 	static const int HEIGHT = 720;

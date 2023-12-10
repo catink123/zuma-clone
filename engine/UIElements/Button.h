@@ -45,11 +45,15 @@ public:
 
 		// make sure the dimensions of the button are not below the minimum required
 		float min_width = text_dims.x + padding.left + padding.right;
-		if (dimensions.x < min_width)
-			dimensions.x = min_width;
+
+		vec2 new_dimensions = get_dimensions();
+		if (new_dimensions.x < min_width)
+			new_dimensions.x = min_width;
 		float min_height = text_dims.y + padding.top + padding.bottom;
-		if (dimensions.y < min_height)
-			dimensions.y = min_height;
+		if (new_dimensions.y < min_height)
+			new_dimensions.y = min_height;
+
+		set_dimensions(new_dimensions);
 
 		VisualUIElement::update(delta, game_state);
 	}

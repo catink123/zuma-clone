@@ -19,9 +19,16 @@ Player::Player(
 
 	drawing_ball = 
 		entity_manager->add_entity_raw(
-			make_shared<Ball>(asset_manager, primary_color, vec2(0, 100))
+			make_shared<Ball>(asset_manager, primary_color, vec2(0, 100)), InLevel
 		);
 	drawing_ball->origin_transform = &global_transform;
+
+	secondary_drawing_ball =
+		entity_manager->add_entity_raw(
+			make_shared<Ball>(asset_manager, secondary_color.value(), vec2(0, -50)), InLevel
+		);
+	secondary_drawing_ball->origin_transform = &global_transform;
+	secondary_drawing_ball->global_transform.scale = 0.5;
 
 	vertical_alignment = VerticalAlignment::Middle;
 	horizontal_alignment = HorizontalAlignment::Center;
@@ -56,6 +63,7 @@ void Player::shoot_ball() {
 
 	// create a new color and assign it to secondary_ball
 	secondary_color = get_random_ball_color();
+	secondary_drawing_ball->change_color(secondary_color.value());
 
 	if (drawing_ball_animation == nullptr)
 		drawing_ball_animation = new Animation(0.5, TIMING_FUNCTIONS.at(EaseOut));
@@ -68,12 +76,16 @@ void Player::swap_balls() {
 		swap(primary_color, secondary_color.value());
 
 	drawing_ball->change_color(primary_color);
+	secondary_drawing_ball->change_color(secondary_color.value());
 }
 
 void Player::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
 	drawing_ball->draw(renderer, renderer_state);
 
 	Sprite::draw(renderer, renderer_state);
+
+	if (secondary_color)
+		secondary_drawing_ball->draw(renderer, renderer_state);
 }
 
 
@@ -193,6 +205,7 @@ void Player::update(const float& delta, GameState& game_state) {
 
 	// update the "holding" ball to make sure it's animation frame is set
 	drawing_ball->update(delta, game_state);
+	secondary_drawing_ball->update(delta, game_state);
 
 	// update the mouse button delay timers if they exist
 	if (lmb_timer)
@@ -240,6 +253,8 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 			ball_track->add_insertion_space(collision_data->ball_segment_index, collision_data->ball_segment_position);
 
 			set_insertion_animation(collision_data->ball_segment_index, hit_ball_index == 0);
+
+			SoundManager::play_sound(asset_manager->get_audio("ball_collision_pitched"));
 		}
 	}
 

@@ -44,7 +44,11 @@ enum UIListenerType {
 
 class UIElement : public Drawable, public Updatable {
 protected:
+	Transform transform;
+	vec2 dimensions;
+
 	shared_ptr<UI> ui;
+	UIElement* parent = nullptr;
 	string id;
 	map<UIListenerType, unordered_map<string, function<void(GameState&, UIElement*)>>> listeners = {
 		{ LMBDown, {} }, { LMBUp, {} },
@@ -59,20 +63,28 @@ protected:
 	virtual vec2 get_min_dimensions() const = 0;
 	virtual void shrink_to_fit();
 	virtual void expand_to_fit();
+
+	virtual vec2 get_calculated_offset() const;
 public:
+	HorizontalAlignment horizontal_alignment = Left;
+	VerticalAlignment vertical_alignment = Top;
+
 	bool fit_content = false;
 	vector<shared_ptr<UIElement>> children;
 
-	UIElement(const string& id, shared_ptr<UI> ui) : id(id), ui(ui) {}
+	UIElement(const string& id, shared_ptr<UI> ui, vec2 position = vec2(), vec2 dimensions = vec2()) : id(id), ui(ui), dimensions(dimensions) {
+		transform.position = position;
+	}
 
 	void add_child(shared_ptr<UIElement> element);
 	void add_children(initializer_list<shared_ptr<UIElement>> elements);
+	shared_ptr<UIElement> get_element_by_id(const string& id);
 
-	virtual const vec2& get_dimensions() const = 0;
-	virtual void set_dimensions(const vec2& new_dimensions) = 0;
+	virtual const vec2& get_dimensions() const { return dimensions; }
+	virtual void set_dimensions(const vec2& new_dimensions) { dimensions = new_dimensions; }
 
-	virtual inline Transform& get_transform_mut() = 0;
-	virtual inline const Transform& get_transform() const = 0;
+	virtual inline Transform& get_transform_mut() { return transform; }
+	virtual inline const Transform& get_transform() const { return transform; }
 
 	virtual inline const vec2& get_position() const { return get_transform().position; }
 	virtual inline void set_position(const vec2& new_position) { get_transform_mut().position = new_position; }
@@ -82,9 +94,6 @@ public:
 
 	virtual inline const vec2& get_scale() const { return get_transform().scale; }
 	virtual inline void set_scale(const vec2& new_scale) { get_transform_mut().scale = new_scale; }
-
-	virtual inline const Transform* get_parent_transform() const = 0;
-	virtual inline void set_parent_transform(Transform* parent_position) = 0;
 
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 	virtual void update(const float& delta, GameState& game_state) override;
@@ -139,10 +148,8 @@ class UISprite : public Sprite {
 public:
 	vec2 dimensions;
 	UISprite(
-		Texture* texture,
-		vec2 position = vec2(),
-		vec2 dimensions = vec2(100, 100)
-	) : Sprite(texture, position), dimensions(dimensions) {}
+		Texture* texture
+	) : Sprite(texture) {}
 	
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 };
@@ -155,40 +162,20 @@ public:
 		Texture* texture = nullptr,
 		vec2 position = vec2(),
 		vec2 dimensions = vec2(100, 100)
-	) : UIElement(id, ui), UISprite(texture, position, dimensions) {}
+	) : UIElement(id, ui, position, dimensions), UISprite(texture) {}
 
-	virtual const vec2& get_dimensions() const override { return dimensions; }
-	virtual void set_dimensions(const vec2& new_dimensions) override { dimensions = new_dimensions; }
-
-	virtual inline Transform& get_transform_mut() override { return global_transform; }
-	virtual inline const Transform& get_transform() const override { return global_transform; }
-
-	virtual const Transform* get_parent_transform() const override { return origin_transform; }
-	virtual void set_parent_transform(Transform* parent_transform) override { origin_transform = parent_transform; }
-
+	virtual void update(const float& delta, GameState& game_state) override;
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 };
 
 class LayoutUIElement : public UIElement {
-	Transform transform;
-	Transform* origin_transform = nullptr;
-	vec2 dimensions;
 public:
 	LayoutUIElement(
 		const string& id, 
 		shared_ptr<UI> ui,
 		vec2 position = vec2(),
 		vec2 dimensions = vec2(100, 100)
-	) : UIElement(id, ui), transform(position), dimensions(dimensions) {}
-
-	virtual const vec2& get_dimensions() const override { return dimensions; }
-	virtual void set_dimensions(const vec2& new_dimensions) override { dimensions = new_dimensions; }
-
-	virtual inline const Transform& get_transform() const override { return transform; }
-	virtual inline Transform& get_transform_mut() override { return transform; }
-
-	virtual const Transform* get_parent_transform() const override { return origin_transform; }
-	virtual void set_parent_transform(Transform* parent_transform) override { origin_transform = parent_transform; }
+	) : UIElement(id, ui, position, dimensions) {}
 
 	virtual void update(const float& delta, GameState& game_state) override { layout_children(delta, game_state); }
 

@@ -1,15 +1,41 @@
 #include "../engine/UI.h"
 
+vec2 UIElement::get_calculated_offset() const {
+	vec2 result;
+
+	UIElement* current_parent = parent;
+	while (current_parent != nullptr) {
+		const vec2& curpar_pos = current_parent->get_position();
+		const vec2& curpar_scale = current_parent->get_scale();
+		result.x += curpar_pos.x;
+		result.x *= curpar_scale.x;
+		result.y += curpar_pos.y;
+		result.y *= curpar_scale.y;
+		current_parent = current_parent->parent;
+	}
+
+	return result;
+}
+
 void UIElement::add_child(shared_ptr<UIElement> element) {
 	children.push_back(element);
 
 	//tie added element's origin_transform to parent's transform
-	element->set_parent_transform(&get_transform_mut());
+	//element->set_parent_transform(&get_transform_mut());
+	element->parent = this;
 }
 
 void UIElement::add_children(initializer_list<shared_ptr<UIElement>> elements) {
 	for (auto& el : elements)
 		add_child(el);
+}
+
+shared_ptr<UIElement> UIElement::get_element_by_id(const string& id) {
+	for (auto el : children) {
+		if (el->id == id)
+			return el;
+	}
+	return nullptr;
 }
 
 void UIElement::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
@@ -19,7 +45,7 @@ void UIElement::draw(SDL_Renderer* renderer, const RendererState& renderer_state
 
 bool UIElement::is_mouse_inside_element(GameState& game_state) const {
 	const vec2& mouse_pos = game_state.mouse_state.mouse_pos;
-	const vec2& pos = get_position();
+	const vec2& pos = get_calculated_offset() + get_position();
 	const vec2& dims = get_dimensions();
 
 	return 
@@ -304,6 +330,12 @@ void UISprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state)
 	SDL_RenderCopyExF(renderer, texture->get_raw(), &lb, &lb_out, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
 	SDL_RenderCopyExF(renderer, texture->get_raw(), &b, &b_out, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
 	SDL_RenderCopyExF(renderer, texture->get_raw(), &rb, &rb_out, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
+}
+
+void VisualUIElement::update(const float& delta, GameState& game_state) {
+	UISprite::dimensions = UIElement::dimensions;
+	UISprite::global_transform = get_calculated_offset() + get_position();
+	UIElement::update(delta, game_state);
 }
 
 void VisualUIElement::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {

@@ -1,6 +1,9 @@
 #pragma once
 #include "../engine/common.h"
-//#include "Level.h"
+#include "../engine/Audio.h"
+#include "../engine/SoundManager.h"
+#include <map>
+#include <functional>
 
 struct MouseState {
 	vec2 previous_mouse_pos = vec2();
@@ -45,18 +48,33 @@ enum GameSection {
 	InMenu,
 	InLevel,
 	DeathScreen,
-	LevelSelection
+	WinScreen,
+	LevelSelection,
+	InSettings
 };
 
 class GameState {
+	GameSection section = None;
 public:
 	bool is_exiting = false;
+	std::map<GameSection, Audio&> section_music;
+
+	std::function<void(std::function<void(void)>, float)> fade_in;
+	std::function<void(std::function<void(void)>, float)> fade_out;
 
 	uint game_score = 0;
-	GameSection section = None;
 	MouseState mouse_state;
 	KeyboardState keyboard_state;
 	RendererState renderer_state;
+
+	const GameSection& get_section() const { return section; }
+	void set_section(const GameSection& new_section) {
+		section = new_section;
+		if (section_music.find(new_section) != section_music.end())
+			SoundManager::set_music(section_music.at(section));
+		else
+			SoundManager::stop_music();
+	}
 
 	void exit() { is_exiting = true; }
 	void save_settings() {

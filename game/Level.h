@@ -67,6 +67,8 @@ public:
 			player->local_transform.scale = 0.75;
 			player->global_transform.position = data->player_position;
 		}
+
+		SoundManager::set_music(asset_manager->get_audio("level_song"));
 	}
 
 	~Level() {

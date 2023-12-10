@@ -114,6 +114,8 @@ BallTrack::BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_
 		segment.angle = acosf(segment.angle_cos);
 
 		// as cmath's acos doesn't give negative values, we need to account for negative angles
+		if (segment.angle_cos < 0)
+			segment.angle -= M_PI;
 
 		// if the height of the segment's right triangle is negative
 		// (the segment's end point is closer to the top boundary than the start point),
@@ -148,8 +150,21 @@ BallTrack::BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_
 	}
 	ball_segments.push_back(segment);
 
-	// temporary
+	// shift back the created segment
 	ball_segments[0].position = -(static_cast<float>(ball_segments[0].get_total_length()));
+
+	// prepare the death hole sprite
+
+	vec2 dh_pos = cache.points[0];
+
+	for (const TrackSegment& ts : cache.segments) {
+		dh_pos.x += ts.length * ts.angle_cos;
+		dh_pos.y += ts.length * ts.angle_sin;
+	}
+
+	death_window = make_unique<Sprite>(&asset_manager->get_texture("death_window"), dh_pos, 0.25);
+	death_window->horizontal_alignment = Center;
+	death_window->vertical_alignment = Middle;
 }
 
 optional<uint> BallTrack::get_track_segment_by_position(const float& position) const {
@@ -204,6 +219,8 @@ float BallTrack::get_track_segment_length_sum(const uint& last_segment) const {
 }
 
 void BallTrack::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {
+	death_window->draw(renderer, renderer_state);
+
 	// go through each ball segment
 	for (const BallSegment& segment : ball_segments)
 		// and each of the balls of the segments
@@ -217,6 +234,16 @@ void BallTrack::draw(SDL_Renderer* renderer, const RendererState& renderer_state
 }
 
 void BallTrack::update(const float& delta, GameState& game_state) {
+	if (ball_segments.size() == 0) {
+		if (!is_failing && !is_fading_out_to_screen) {
+			is_fading_out_to_screen = true;
+			game_state.fade_in([&]() {
+				game_state.set_section(WinScreen);
+				game_state.fade_out([](){}, 1.0F);
+			}, 1.0F);
+		}
+	}
+
 	// go through each ball segment
 	for (int i = 0; i < ball_segments.size(); i++) {
 		BallSegment& segment = ball_segments[i];
@@ -238,6 +265,14 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			else {
 				segment.balls[i].show = true;
 			}
+
+			// fade out balls that are close to the death window
+
+			float distance_to_end = cache.total_length - ball_absolute_position;
+			if (segment.balls[i].show && distance_to_end < Ball::BALL_SIZE * 3)
+				segment.balls[i].opacity = distance_to_end / (Ball::BALL_SIZE * 3);
+			else
+				segment.balls[i].opacity = 1;
 
 			const TrackSegment& track_segment = cache.segments[track_segment_index.value()];
 
@@ -280,9 +315,14 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 				}
 			}
 			if (are_segments_left_on_screen)
-				speed_multiplier += 2;
-			else {
-				game_state.section = DeathScreen;
+				speed_multiplier += FAIL_SEGMENT_ACCELERATION * delta;
+			else if (!is_fading_out_to_screen) {
+				is_fading_out_to_screen = true;
+
+				game_state.fade_in([&]() {
+					game_state.set_section(DeathScreen);
+					game_state.fade_out([]() {}, 1.0F);
+				}, 1.0F);
 			}
 		}
 
@@ -311,8 +351,9 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 
 		segment.position += delta * total_speed;
 
+		// prevent any checks if death is in progress
 		if (is_failing)
-			break;
+			continue;
 
 		// check if the current segment collides with the next one
 
@@ -325,12 +366,13 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 
 			bool adjacent_ball_same = segment.balls.back().color == next_segment.balls.front().color;
 			if (adjacent_ball_same)
-				segment.speed += SEGMENT_FOLLOW_ACCELERATION;
+				next_segment.speed -= SEGMENT_FOLLOW_ACCELERATION * delta;
 
 			// if the last ball of the current segment (position + length) touches the next segment with set error,
-			// combine both ball segments into one
-			if (segment.position + segment.get_total_length() >= next_segment.position + SEGMENT_COLLISION_ERROR) {
-				connect_ball_segments(i, adjacent_ball_same);
+			// and the next segment is not shifting (i.e. a ball is being added into the segment) combine both ball segments into one
+			if (segment.position + segment.get_total_length() >= next_segment.position + SEGMENT_COLLISION_ERROR && !next_segment.is_shifting) {
+				connect_ball_segments(i);
+				SoundManager::play_sound(asset_manager->get_audio("ball_collision"));
 			}
 		}
 
@@ -373,13 +415,21 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 				);
 			}
 
-			game_state.game_score += same_color_count * 100;
+			game_state.game_score += same_color_count * SCORE_PER_BALL;
 
 			// delete the string of balls
 			segment.balls.erase(start_it, end_it);
 			
 			// leave a blank space in place of them
-			cut_ball_segment(i, saved_ball_index * Ball::BALL_SIZE, Ball::BALL_SIZE * same_color_count);
+			// if the blank space is not at the start, cut the segment
+			if (saved_ball_index > 0)
+				cut_ball_segment(i, saved_ball_index * Ball::BALL_SIZE, Ball::BALL_SIZE * same_color_count);
+			// otherwise, just shift it by broken ball count
+			else
+				segment.position += Ball::BALL_SIZE * same_color_count;
+
+			// play a breaking sound
+			SoundManager::play_sound(asset_manager->get_audio("ball_break"));
 		}
 
 		// if some segment is out of the track length, we're dead
@@ -387,6 +437,16 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			is_failing = true;
 		}
 	}
+
+	// remove empty segments
+	ball_segments.erase(
+		remove_if(
+			ball_segments.begin(),
+			ball_segments.end(),
+			[](BallSegment& seg) { return seg.balls.size() == 0; }
+		),
+		ball_segments.end()
+	);
 
 	for (int i = 0; i < ball_particles.size(); i++) {
 		BallParticles& bp = ball_particles[i];
@@ -488,6 +548,7 @@ bool BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& po
 
 void BallTrack::add_insertion_space(const uint& ball_segment_index, const float& position) {
 	bool was_cut = cut_ball_segment(ball_segment_index, position);
+	SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "inserting at: segment = %d; position %.2f; was_cut: %d\n", ball_segment_index, position, was_cut);
 
 	// if the segment was cut, shift the second part
 	if (was_cut)

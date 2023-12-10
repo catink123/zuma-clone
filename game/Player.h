@@ -10,7 +10,7 @@
 // PlayerBall is used with a Player
 // it has a velocity parameter for the PlayerBall to be able to shoot
 class PlayerBall : public Ball {
-	static constexpr float BALL_SPEED = 400.0F;
+	static constexpr float BALL_SPEED = 500.0F;
 	vec2 velocity;
 	// needed to check for a collision between the BallTrack and the PlayerBall
 	shared_ptr<BallTrack> ball_track = nullptr;
@@ -48,7 +48,7 @@ public:
 
 class Player : public Sprite, public Updatable {
 	static const int PLAYER_ANIM_SHIFT = 30;
-	static constexpr float MOUSE_BUTTON_DELAY = 1.0F;
+	static constexpr float MOUSE_BUTTON_DELAY = 0.5F;
 
 	// the default texture used
 	Texture& normal_texture;
@@ -71,6 +71,7 @@ class Player : public Sprite, public Updatable {
 
 public:
 	shared_ptr<Ball> drawing_ball = nullptr;
+	shared_ptr<Ball> secondary_drawing_ball = nullptr;
 	BallColor primary_color;
 	optional<BallColor> secondary_color;
 	// needed to load textures in balls

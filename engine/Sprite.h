@@ -29,6 +29,8 @@ public:
 	VerticalAlignment vertical_alignment = Top;
 	HorizontalAlignment horizontal_alignment = Left;
 
+	float opacity = 1;
+
 	Sprite(
 		Texture* texture, 
 		vec2 position = vec2(), 

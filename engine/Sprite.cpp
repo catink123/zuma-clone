@@ -84,7 +84,13 @@ void Sprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state) c
 	if (clip_rect)
 		cr = &clip_rect.value();
 
+	// apply opacity
+	SDL_SetTextureAlphaMod(texture->get_raw(), static_cast<Uint8>(opacity * 255));
+
 	SDL_RenderCopyExF(renderer, texture->get_raw(), cr, &output_rect, resulting_transform.rotation, nullptr, SDL_FLIP_NONE);
+
+	// restore opacity for other sprites
+	SDL_SetTextureAlphaMod(texture->get_raw(), 255);
 }
 
 void Sprite::set_display_size(const vec2& size) {

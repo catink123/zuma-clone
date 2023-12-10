@@ -16,8 +16,7 @@ class Text : public VisualUIElement {
 
 		//texture = font->render(ui->renderer, content, color, ui->get_scaling());
 		texture = font->render(ui->renderer, content, color, 1);
-		dimensions.x = texture->get_width();
-		dimensions.y = texture->get_height();
+		set_dimensions(vec2(texture->get_width(), texture->get_height()));
 	}
 
 	vec2 get_min_dimensions() const override {

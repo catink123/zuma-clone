@@ -82,6 +82,9 @@ public:
 						el->set_position(vec2(fc_dims.x - current_el_dims.x, current_el_pos.y));
 				}
 
+				// update the element to make sure the position is correct
+				el->update(0, game_state);
+
 				accumulated_position += el->get_dimensions().y + gap;
 			}
 			if (direction == X) {
@@ -114,6 +117,9 @@ public:
 					if (alignment == End)
 						el->set_position(vec2(current_el_pos.x, fc_dims.y - current_el_dims.y));
 				}
+
+				// update the element to make sure the position is correct
+				el->update(0, game_state);
 
 				accumulated_position += el->get_dimensions().x + gap;
 			}

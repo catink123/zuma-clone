@@ -26,6 +26,8 @@ struct EntityManager {
 		{ InMenu, {} },
 		{ DeathScreen, {} },
 		{ LevelSelection, {} },
+		{ InSettings, {} },
+		{ WinScreen, {} },
 		{ None, {} }
 	};
 
