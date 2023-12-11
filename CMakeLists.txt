@@ -6,7 +6,7 @@ list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_mixer-2.6.3")
 
 cmake_minimum_required(VERSION 3.8)
 
-project(ZumaClone
+project(CatinkAdventures
 	VERSION 1.0
 	DESCRIPTION "A Zuma Clone"
 	LANGUAGES CXX
@@ -59,7 +59,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 # header files directories for the given executable
-# target_include_directories(${PROJECT_NAME} PRIVATE engine game)
 
 # include SDL2
 
