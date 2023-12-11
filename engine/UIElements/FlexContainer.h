@@ -8,20 +8,26 @@ class FlexContainer : public LayoutUIElement {
 	Axis direction;
 
 	vec2 get_min_dimensions() const override {
-		vec2 result(
-			padding.left + padding.right, 
-			padding.top + padding.bottom
-		);
+		vec2 result;
 		
 		for (const auto& el : children) {
 			const vec2& el_dims = el->get_dimensions();
-			if (direction == X)
+			if (direction == X) {
 				result.x += el_dims.x + gap;
-			if (direction == Y)
+				result.y = fmaxf(result.y, el_dims.y);
+			}
+			if (direction == Y) {
+				result.x = fmaxf(result.x, el_dims.x);
 				result.y += el_dims.y + gap;
+			}
 		}
 		if (direction == X) result.x -= gap;
 		if (direction == Y) result.y -= gap;
+
+		result += vec2(
+			padding.left + padding.right,
+			padding.top + padding.bottom
+		);
 
 		return result;
 	}
@@ -44,7 +50,7 @@ public:
 		LayoutUIElement(id, ui, position, dimensions), 
 		padding(padding), gap(gap), direction(direction), stretch(stretch) {}
 
-	void layout_children(const float& delta, GameState& game_state) override {
+	void layout_children() override {
 		float accumulated_position = 0;
 		const vec2& fc_dims = get_dimensions();
 		for (auto& el : children) {
@@ -68,7 +74,7 @@ public:
 				el->set_dimensions(new_el_dims);
 
 				// update the element to make sure the dimensions are correct
-				el->update(0, game_state);
+				el->update_layout(true);
 
 				// flex alignment
 
@@ -83,7 +89,7 @@ public:
 				}
 
 				// update the element to make sure the position is correct
-				el->update(0, game_state);
+				el->update_layout(true);
 
 				accumulated_position += el->get_dimensions().y + gap;
 			}
@@ -104,7 +110,7 @@ public:
 						fc_dims.y - padding.top - padding.bottom
 					)
 				);
-				el->update(0, game_state);
+				el->update_layout(true);
 
 				// flex alignment
 
@@ -119,7 +125,7 @@ public:
 				}
 
 				// update the element to make sure the position is correct
-				el->update(0, game_state);
+				el->update_layout(true);
 
 				accumulated_position += el->get_dimensions().x + gap;
 			}

@@ -93,7 +93,12 @@ void BallSegment::shift() {
 BTCreationException::BTCreationException(const char* message) { msg = message; }
 const char* BTCreationException::what() { return msg; }
 
-BallTrack::BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_manager) : asset_manager(asset_manager) {
+BallTrack::BallTrack(
+	const vector<vec2>& points, 
+	const uint& ball_count, 
+	shared_ptr<AssetManager> asset_manager, 
+	shared_ptr<EntityManager> entity_manager
+) : asset_manager(asset_manager), entity_manager(entity_manager) {
 	// save the given points for later use
 	cache.points = points;
 	// if there aren't enough points to construct a track, throw an error
@@ -142,7 +147,7 @@ BallTrack::BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_
 	}
 
 	BallSegment segment;
-	for (int i = 0; i < 30; i++) {
+	for (int i = 0; i < ball_count; i++) {
 		BallColor color = (BallColor)(rand() % BALL_COLOR_COUNT);
 		segment.balls.push_back(
 			Ball(asset_manager, color)
@@ -238,6 +243,8 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 		if (!is_failing && !is_fading_out_to_screen) {
 			is_fading_out_to_screen = true;
 			game_state.fade_in([&]() {
+				// delete Level to prepare for the next load
+				entity_manager->schedule_to_delete("level");
 				game_state.set_section(WinScreen);
 				game_state.fade_out([](){}, 1.0F);
 			}, 1.0F);
@@ -320,6 +327,9 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 				is_fading_out_to_screen = true;
 
 				game_state.fade_in([&]() {
+					// delete Level to prepare for the next load
+					entity_manager->schedule_to_delete("level");
+
 					game_state.set_section(DeathScreen);
 					game_state.fade_out([]() {}, 1.0F);
 				}, 1.0F);
@@ -553,9 +563,6 @@ void BallTrack::add_insertion_space(const uint& ball_segment_index, const float&
 	// if the segment was cut, shift the second part
 	if (was_cut)
 		ball_segments[ball_segment_index + 1].shift();
-	// otherwise, shift the only part available
-	else
-		ball_segments[ball_segment_index].shift();
 }
 
 void BallTrack::connect_ball_segments(const uint& ball_segment_index, bool inherit_seconds_speed) {
@@ -579,7 +586,7 @@ void BallTrack::connect_ball_segments(const uint& ball_segment_index, bool inher
 	ball_segments.erase(ball_segments.begin() + ball_segment_index + 1);
 }
 
-const TrackSegment& BallTrack::get_track_segment_by_bs_index(const float& ball_segment_index) {
+const TrackSegment& BallTrack::get_track_segment_by_bs_index(const float& ball_segment_index) const {
 	auto& ball_segment = ball_segments[ball_segment_index];
 
 	optional<uint> track_segment_index = get_track_segment_by_position(
@@ -592,7 +599,7 @@ const TrackSegment& BallTrack::get_track_segment_by_bs_index(const float& ball_s
 		return cache.segments[track_segment_index.value()];
 }
 
-vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index, bool inserting_at_end) {
+vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index, bool inserting_at_end) const {
 	auto& ball_segment = ball_segments[ball_segment_index];
 
 	// calculate the ball's position relative to the start of the track
@@ -647,4 +654,15 @@ void BallTrack::insert_new_ball(const uint& ball_segment_index, BallColor color,
 	}
 	else
 		segment.balls.push_back(new_ball);
+}
+
+vector<BallColor> BallTrack::get_current_colors() const {
+	vector<BallColor> result;
+	for (const auto& segment : ball_segments) {
+		for (const auto& ball : segment.balls) {
+			if (find(result.begin(), result.end(), ball.color) == result.end())
+				result.push_back(ball.color);
+		}
+	}
+	return result;
 }

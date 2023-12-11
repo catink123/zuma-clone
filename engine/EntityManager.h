@@ -81,6 +81,7 @@ struct EntityManager {
 	shared_ptr<T> add_entity(string id, shared_ptr<T> entity, GameSection section = None) {
 		// if the drawable with given id already exists, don't add anything
 		if (entity_map.find(id) != entity_map.end()) return nullptr;
+
 		entity_map.insert({ id, entity });
 
 		add_entity_raw(entity, section);
@@ -90,6 +91,7 @@ struct EntityManager {
 
 	void remove_entity(string id) {
 		if (entity_map.find(id) == entity_map.end()) return;
+		schedule_to_delete(id);
 		entity_map.erase(id);
 	}
 
@@ -104,6 +106,12 @@ struct EntityManager {
 	// schedules an entity pointer to delete in the next frame
 	void schedule_to_delete(Drawable* entity_ptr) {
 		entities_to_delete.push_back(entity_ptr);
+	}
+
+	void schedule_to_delete(const string& id) {
+		entities_to_delete.push_back(
+			get_entity_by_name<Drawable>(id.c_str()).get()
+		);
 	}
 
 	// deletes all scheduled for remove entities

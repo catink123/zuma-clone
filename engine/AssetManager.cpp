@@ -6,14 +6,16 @@ const char* AMAssetLoadException::what() { return msg; }
 AssetManager::AssetManager() {}
 
 AssetManager::~AssetManager() {
-	// get all raw texture pointer and destroy the textures
-	for (auto pair : textures)
+	for (auto& pair : textures)
 		pair.second.destroy();
 
-	for (auto pair : ui_textures)
+	for (auto& pair : ui_textures)
 		pair.second.destroy();
 
-	for (auto pair : fonts)
+	for (auto& pair : fonts)
+		pair.second.destroy();
+
+	for (auto& pair : audio)
 		pair.second.destroy();
 }
 
@@ -271,13 +273,13 @@ void AssetManager::load_level_data(const string& id, const string& path, SDL_Ren
 	// open file for reading in binary form
 	SDL_RWops* io = SDL_RWFromFile(c_path_str, "rb");
 	// allocate a C string for signature data
-	unsigned char* signature_data = (unsigned char*)malloc(13 * sizeof(unsigned char));
+	unsigned char* signature_data = (unsigned char*)malloc(14 * sizeof(unsigned char));
 
 	// if couldn't allocate, throw an error
 	if (!signature_data) throw runtime_error("couldn't allocate signature_data!");
 
-	// if couldn't read first 13 bytes, log and throw an error
-	if (SDL_RWread(io, signature_data, 13 * sizeof(unsigned char), 1) <= 0) {
+	// if couldn't read first 14 bytes, log and throw an error
+	if (SDL_RWread(io, signature_data, 14 * sizeof(unsigned char), 1) <= 0) {
 		auto sdl_error = SDL_GetError();
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level data %s! Error: %s\n", c_path_str, sdl_error);
 		throw AMAssetLoadException(sdl_error);
@@ -306,8 +308,10 @@ void AssetManager::load_level_data(const string& id, const string& path, SDL_Ren
 
 	l_data.track_speed_multiplier = convert_float_type(signature_data + 10) / 100;
 
+	l_data.track_ball_count = signature_data[12];
+
 	// construct C string for level track points
-	uint point_count = static_cast<uint>(signature_data[12]);
+	uint point_count = static_cast<uint>(signature_data[13]);
 	unsigned char* level_data = (unsigned char*)malloc(sizeof(unsigned char) * point_count * 4);
 
 	// if couldn't allocate, throw an error
@@ -434,4 +438,13 @@ void AssetManager::load_audio(const string& id, const string& path, AudioType au
 		Audio audio_obj(music);
 		audio.insert({ id, move(audio_obj) });
 	}
+}
+
+void AssetManager::unload_audio(const string& id) {
+	if (audio.find(id) == audio.end()) return;
+	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Unloading audio with id '%s'...\n", id.c_str());
+
+	audio.at(id).destroy();
+
+	audio.erase(id);
 }

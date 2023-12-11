@@ -10,6 +10,8 @@ struct SMPlayException : std::runtime_error {
 };
 
 struct SoundManager {
+	static constexpr float MUSIC_VOLUME = 0.5F;
+
 	static void play_sound(Audio& audio) {
 		if (audio.get_type() == Music) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SoundManager: error: tried playing music as a sound.\n");
@@ -40,8 +42,17 @@ struct SoundManager {
 		Mix_HaltMusic();
 	}
 
+	static void set_music_volume(const float& volume) {
+		Mix_VolumeMusic(static_cast<int>(volume * MIX_MAX_VOLUME));
+	}
+
+	static float get_music_volume() {
+		return static_cast<float>(Mix_VolumeMusic(-1)) / static_cast<float>(MIX_MAX_VOLUME);
+	}
+
 	static void set_volume(const float& volume) {
-		Mix_MasterVolume(static_cast<int>(volume * MIX_MAX_VOLUME));
+		Mix_MasterVolume(static_cast<int>(volume * static_cast<float>(MIX_MAX_VOLUME)));
+		set_music_volume(volume * MUSIC_VOLUME);
 	}
 
 	static float get_volume() {

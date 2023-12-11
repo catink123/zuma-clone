@@ -34,6 +34,12 @@ public:
 	}
 
 	void update(const float& delta, GameState& game_state) {
+		update_layout();
+
+		VisualUIElement::update(delta, game_state);
+	}
+
+	void update_layout(bool update_children = false) override {
 		const vec2& button_pos = get_position();
 		const vec2& scaling = get_scale();
 
@@ -55,7 +61,7 @@ public:
 
 		set_dimensions(new_dimensions);
 
-		VisualUIElement::update(delta, game_state);
+		VisualUIElement::update_layout(update_children);
 	}
 
 	void set_text_content(const string& new_text) {

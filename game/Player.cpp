@@ -53,16 +53,18 @@ void Player::shoot_ball() {
 
 	// "shift" balls forward and assign a new color to the secondary ball
 
+	auto available_colors = ball_track->get_current_colors();
+
 	// swap balls places if there is a secondary color
 	if (secondary_color)
 		swap_balls();
 	else {
-		primary_color = get_random_ball_color();
+		primary_color = pick_random(available_colors);
 		drawing_ball->change_color(primary_color);
 	}
 
 	// create a new color and assign it to secondary_ball
-	secondary_color = get_random_ball_color();
+	secondary_color = pick_random(available_colors);
 	secondary_drawing_ball->change_color(secondary_color.value());
 
 	if (drawing_ball_animation == nullptr)
@@ -186,6 +188,7 @@ void Player::update(const float& delta, GameState& game_state) {
 
 			float shift = static_cast<float>(PLAYER_ANIM_SHIFT) * (1 - anim_progress);
 			local_transform.position.y = -shift;
+			secondary_drawing_ball->local_transform.position.y = -shift;
 		}
 	}
 
@@ -238,6 +241,16 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 	Ball::update(delta, game_state);
 	// update position according to velocity
 	global_transform.position += velocity * delta;
+
+	if (
+		global_transform.position.x > WINDOW_WIDTH + Ball::BALL_SIZE ||
+		global_transform.position.x < -static_cast<int>(Ball::BALL_SIZE) ||
+		global_transform.position.y > WINDOW_HEIGHT + Ball::BALL_SIZE ||
+		global_transform.position.y < -static_cast<int>(Ball::BALL_SIZE)
+	) {
+		entity_manager->schedule_to_delete(this);
+		return;
+	}
 
 	if (collision_enabled) {
 		auto collision_data = ball_track->get_collision_data(global_transform.position, 2);

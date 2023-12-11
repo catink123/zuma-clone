@@ -20,7 +20,7 @@ void Texture::destroy() {
 		return;
 
 	SDL_DestroyTexture(texture);
-	texture == nullptr;
+	texture = nullptr;
 	w = 0;
 	h = 0;
 }

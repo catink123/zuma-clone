@@ -2,6 +2,7 @@
 #include <utility>
 #include <random>
 #include <SDL.h>
+#include <vector>
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -85,3 +86,9 @@ public:
 
 // gives a random float between 0 and 1
 float rand_float();
+
+// picks a random value from a vector
+template <typename T>
+const T& pick_random(const std::vector<T>& container) {
+	return container[rand() % container.size()];
+}

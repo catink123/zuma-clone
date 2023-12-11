@@ -98,18 +98,23 @@ void UIElement::update(const float& delta, GameState& game_state) {
 
 	if ((m_state.previous_mouse_pos - m_state.mouse_pos).len() != 0.0F)	on_mouse_move(game_state);
 
-	if (fit_content)
-		shrink_to_fit();
-	else
-		expand_to_fit();
+	update_layout(true);
 
 	for (auto& el : children)
 		el->update(delta, game_state);
 
+	update_layout(true);
+}
+
+void UIElement::update_layout(bool update_children) {
 	if (fit_content)
 		shrink_to_fit();
 	else
 		expand_to_fit();
+
+	if (update_children)
+		for (auto& el : children)
+			el->update_layout(true);
 }
 
 const string& UIElement::add_event_listener(
@@ -297,10 +302,10 @@ void UISprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state)
 			tr->x += resulting_transform.position.x;
 			break;
 		case Center:
-			tr->x += resulting_transform.position.x - tr->w / 2.0F;
+			tr->x += resulting_transform.position.x - dimensions.x / 2.0F;
 			break;
 		case Right:
-			tr->x += resulting_transform.position.x - tr->w;
+			tr->x += resulting_transform.position.x - dimensions.x;
 			break;
 		}
 		switch (vertical_alignment) {
@@ -308,10 +313,10 @@ void UISprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state)
 			tr->y += resulting_transform.position.y;
 			break;
 		case Middle:
-			tr->y += resulting_transform.position.y - tr->h / 2.0F;
+			tr->y += resulting_transform.position.y - dimensions.y / 2.0F;
 			break;
 		case Bottom:
-			tr->y += resulting_transform.position.y - tr->h;
+			tr->y += resulting_transform.position.y - dimensions.y;
 			break;
 		}
 
@@ -333,9 +338,14 @@ void UISprite::draw(SDL_Renderer* renderer, const RendererState& renderer_state)
 }
 
 void VisualUIElement::update(const float& delta, GameState& game_state) {
+	update_layout();
+	UIElement::update(delta, game_state);
+}
+
+void VisualUIElement::update_layout(bool update_children) {
 	UISprite::dimensions = UIElement::dimensions;
 	UISprite::global_transform = get_calculated_offset() + get_position();
-	UIElement::update(delta, game_state);
+	UIElement::update_layout(update_children);
 }
 
 void VisualUIElement::draw(SDL_Renderer* renderer, const RendererState& renderer_state) const {

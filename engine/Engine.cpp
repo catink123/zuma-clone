@@ -13,12 +13,13 @@ void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetM
 		make_shared<FlexContainer>(
 			"game_strip",
 			game_ui, BoundingBox(10),
-			10, X,
+			20, X,
 			vec2(), vec2(1280, 0)
 		);
 
 	auto score =
 		make_shared<Text>("score", game_ui, "Score: 0", &asset_manager->get_font("medieval_button_font"), SDL_Color({ 255, 255, 255 }));
+	score->fit_content = true;
 
 	auto pause_button =
 		make_shared<Button>(
@@ -31,8 +32,9 @@ void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetM
 
 	pause_button->add_event_listener(
 		LMBUp, "pause_game",
-		[](GameState& game_state, auto) {
-			game_state.fade_in([&]() {
+		[entity_manager](GameState& game_state, auto) {
+			game_state.fade_in([entity_manager, &game_state]() {
+				entity_manager->schedule_to_delete("level");
 				game_state.set_section(InMenu);
 				game_state.fade_out([](){}, Fade::DURATION);
 			}, Fade::DURATION);
@@ -51,11 +53,11 @@ Engine::Engine() {
 		return;
 	}
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL initialized.\n");
-	
-	set_scale(1);
 
+	game_state.load_settings();
+	
 	window = SDL_CreateWindow(
-		"Zuma", 
+		"Catink Adventures", 
 		SDL_WINDOWPOS_CENTERED, 
 		SDL_WINDOWPOS_CENTERED, 
 		static_cast<int>(Engine::WIDTH * this->game_state.renderer_state.scaling), 
@@ -68,6 +70,8 @@ Engine::Engine() {
 		return;
 	}
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Window created with scale %f.\n", game_state.renderer_state.scaling);
+
+	set_fullscreen(game_state.renderer_state.is_fullscreen);
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
@@ -115,12 +119,6 @@ Engine::~Engine() {
 
 	SDL_DestroyWindow(window);
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Window destroyed.\n");
-	TTF_Quit();
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL_ttf quit.\n");
-	IMG_Quit();
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL_image quit.\n");
-	SDL_Quit();
-	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL quit.\n");
 }
 
 void Engine::run_loop() {
@@ -189,6 +187,13 @@ void Engine::update() {
 		text->set_content(string("You failed. Score: ") + to_string(game_state.game_score));
 	}
 
+	// update win screen text
+	if (game_state.get_section() == WinScreen) {
+		auto win_ui = entity_manager->get_entity_by_name<UI>("win_ui");
+		auto text = dynamic_pointer_cast<Text>(win_ui->root_element->children[0]);
+		text->set_content(string("You won! Score: ") + to_string(game_state.game_score));
+	}
+
 	// process keyboard
 	if (game_state.keyboard_state.keys && game_state.keyboard_state.keys[SDL_SCANCODE_F]) {
 		if (keyboard_timer == nullptr) {
@@ -220,6 +225,12 @@ void Engine::update() {
 }
 
 void Engine::prepare_menu_ui() {
+	entity_manager->add_entity(
+		"menu_bg",
+		make_shared<Sprite>(&asset_manager->get_texture("menu_bg"), 0, 1, 0, nullopt, vec2(WINDOW_WIDTH, WINDOW_HEIGHT)),
+		InMenu
+	);
+
 	auto ui = entity_manager->add_entity(
 		"menu_ui",
 		make_shared<UI>(renderer),
@@ -309,6 +320,7 @@ void Engine::prepare_menu_ui() {
 	flex->add_children({ play_button, settings_button, exit_button });
 	flex->fit_content = true;
 	flex->alignment = FlexContainer::Alignment::Middle;
+	flex->update_layout(true);
 	const vec2& flex_dims = flex->get_dimensions();
 	flex->set_position(vec2(WINDOW_WIDTH / 2 - flex_dims.x / 2, WINDOW_HEIGHT - 100 - flex_dims.y));
 
@@ -316,6 +328,12 @@ void Engine::prepare_menu_ui() {
 }
 
 void Engine::prepare_death_ui() {
+	entity_manager->add_entity(
+		"death_bg",
+		make_shared<Sprite>(&asset_manager->get_texture("death_screen_bg"), 0, 1, 0, nullopt, vec2(WINDOW_WIDTH, WINDOW_HEIGHT)),
+		DeathScreen
+	);
+
 	auto death_ui = entity_manager->add_entity(
 		"death_ui",
 		make_shared<UI>(
@@ -332,13 +350,16 @@ void Engine::prepare_death_ui() {
 			10,
 			Y,
 			vec2(),
-			vec2(500, 200)
+			vec2(500, 0)
 		);
+
+	death_flex->fit_content = true;
+	death_flex->alignment = FlexContainer::Alignment::Middle;
 
 	death_ui->root_element = death_flex;
 	
 	auto death_score_text = 
-		make_shared<Text>("death_score", death_ui, "Score: 0", &asset_manager->get_font("medieval_button_font_large"), SDL_Color({ 0, 0, 0 }));
+		make_shared<Text>("death_score", death_ui, "You failed! Score: xxxx", &asset_manager->get_font("medieval_button_font_large"), SDL_Color({ 255, 255, 255 }));
 
 	auto death_go_back =
 		make_shared<Button>(
@@ -351,6 +372,7 @@ void Engine::prepare_death_ui() {
 			BoundingBox(25, 15),
 			vec2(10, 10)
 		);
+	death_go_back->fit_content = true;
 
 	death_go_back->add_event_listener(LMBUp, "go_to_menu", [](GameState& gs, auto) {
 		gs.fade_in([&]() {
@@ -360,6 +382,13 @@ void Engine::prepare_death_ui() {
 	});
 
 	death_flex->add_children({ death_score_text, death_go_back });
+
+	// center on screen
+
+	death_flex->update_layout(true);
+	const vec2& df_dims = death_flex->get_dimensions();
+
+	death_flex->set_position(vec2(WINDOW_WIDTH / 2 - df_dims.x / 2, WINDOW_HEIGHT / 2 + df_dims.y / 2));
 }
 
 void Engine::prepare_win_ui() {
@@ -379,13 +408,16 @@ void Engine::prepare_win_ui() {
 			10,
 			Y,
 			vec2(),
-			vec2(500, 200)
+			vec2(500, 0)
 		);
+
+	win_flex->fit_content = true;
+	win_flex->alignment = FlexContainer::Alignment::Middle;
 
 	win_ui->root_element = win_flex;
 	
 	auto win_score_text = 
-		make_shared<Text>("win_score", win_ui, "Score: 0", &asset_manager->get_font("medieval_button_font_large"), SDL_Color({ 0, 0, 0 }));
+		make_shared<Text>("win_score", win_ui, "You won! Score: xxxx", &asset_manager->get_font("medieval_button_font_large"), SDL_Color({ 0, 0, 0 }));
 
 	auto win_go_back =
 		make_shared<Button>(
@@ -398,6 +430,7 @@ void Engine::prepare_win_ui() {
 			BoundingBox(25, 15),
 			vec2(10, 10)
 		);
+	win_go_back->fit_content = true;
 
 	win_go_back->add_event_listener(LMBUp, "go_to_menu", [](GameState& gs, auto) {
 		gs.fade_in([&]() {
@@ -407,9 +440,22 @@ void Engine::prepare_win_ui() {
 	});
 
 	win_flex->add_children({ win_score_text, win_go_back });
+
+	// center on screen
+
+	win_flex->update_layout(true);
+	const vec2& wf_dims = win_flex->get_dimensions();
+
+	win_flex->set_position(vec2(WINDOW_WIDTH / 2 - wf_dims.x / 2, WINDOW_HEIGHT / 2 - wf_dims.y / 2));
 }
 
 void Engine::prepare_level_select_ui() {
+	entity_manager->add_entity(
+		"level_select_bg",
+		make_shared<Sprite>(&asset_manager->get_texture("level_select_bg"), 0, 1, 0, nullopt, vec2(WINDOW_WIDTH, WINDOW_HEIGHT)),
+		LevelSelection
+	);
+
 	auto level_select_ui = entity_manager->add_entity(
 		"level_select_ui",
 		make_shared<UI>(
@@ -428,6 +474,9 @@ void Engine::prepare_level_select_ui() {
 			vec2(),
 			vec2(500, 200)
 		);
+
+	ls_flex->fit_content = true;
+	ls_flex->alignment = FlexContainer::Alignment::Middle;
 
 	level_select_ui->root_element = ls_flex;
 
@@ -478,8 +527,44 @@ void Engine::prepare_level_select_ui() {
 			gs.fade_out([](){}, 1.0F);
 		}, 1.0F);
 	});
+	
+	auto ls2 =
+		make_shared<Button>(
+			"ls2",
+			level_select_ui,
+			&asset_manager->get_ui_texture("medieval_button"),
+			"Level 2",
+			&asset_manager->get_font("medieval_button_font"),
+			SDL_Color({ 65, 45, 10 }),
+			BoundingBox(25, 15),
+			vec2(10, 10)
+		);
 
-	ls_flex->add_children({ ls_back, ls1 });
+	ls2->add_event_listener(LMBUp, "select_level", [=](GameState& gs, auto) {
+		gs.fade_in([=, &gs]() {
+			entity_manager->remove_entity("level");
+			entity_manager->add_entity(
+				"level",
+				make_shared<Level>(
+					&asset_manager->get_level_data("level2"),
+					asset_manager, entity_manager, renderer, create_level_ui
+				),
+				InLevel
+			);
+
+			gs.set_section(InLevel);
+			gs.fade_out([](){}, 1.0F);
+		}, 1.0F);
+	});
+
+	ls_flex->add_children({ ls_back, ls1, ls2 });
+
+	// center on screen
+
+	ls_flex->update_layout(true);
+	const vec2& lf_dims = ls_flex->get_dimensions();
+
+	ls_flex->set_position(vec2(WINDOW_WIDTH / 2 - lf_dims.x / 2, WINDOW_HEIGHT / 2 - lf_dims.y / 2));
 }
 
 void Engine::prepare_settings_ui() {
@@ -499,8 +584,18 @@ void Engine::prepare_settings_ui() {
 			0,
 			vec2(300, 250)
 		);
+	flex->alignment = FlexContainer::Alignment::Middle;
 
 	settings_ui->root_element = flex;
+
+	auto caption_text =
+		make_shared<Text>(
+			"caption",
+			settings_ui,
+			"Settings",
+			&asset_manager->get_font("medieval_button_font_large")
+		);
+	caption_text->fit_content = true;
 
 	auto back_button =
 		make_shared<Button>(
@@ -515,13 +610,192 @@ void Engine::prepare_settings_ui() {
 		);
 
 	back_button->add_event_listener(LMBUp, "go_to_menu", [](GameState& gs, auto) {
+		gs.save_settings();
 		gs.fade_in([&]() {
 			gs.set_section(InMenu);
 			gs.fade_out([](){}, 0.25F);
 		}, 0.25F);
 	});
 
-	flex->add_children({ back_button });
+	auto fullscreen_button =
+		make_shared<Button>(
+			"fullscreen_switch",
+			settings_ui,
+			&asset_manager->get_ui_texture("medieval_button"),
+			"Go Fullscreen",
+			&asset_manager->get_font("medieval_button_font"),
+			SDL_Color({ 65, 45, 10 }),
+			BoundingBox(25, 15),
+			vec2(10, 10)
+		);
+
+	if (game_state.renderer_state.is_fullscreen)
+		fullscreen_button->set_text_content("Go Windowed");
+
+	fullscreen_button->add_event_listener(LMBUp, "fullscreen", [&](GameState& game_state, UIElement* el) {
+		auto button = dynamic_cast<Button*>(el);
+
+		bool& fs_state = game_state.renderer_state.is_fullscreen;
+
+		set_fullscreen(!fs_state);
+
+		if (fs_state) {
+			button->set_text_content("Go Windowed");
+		}
+		else {
+			button->set_text_content("Go Fullscreen");
+		}
+	});
+
+	auto volume_text =
+		make_shared<Text>(
+			"volume",
+			settings_ui,
+			"Volume: 0",
+			&asset_manager->get_font("medieval_button_font")
+		);
+
+	volume_text->set_content("Volume: " + to_string(static_cast<int>(floorf(SoundManager::get_volume() * 100))) + "%");
+	volume_text->fit_content = true;
+
+	auto volume_buttons_flex =
+		make_shared<FlexContainer>(
+			"vb_flex",
+			settings_ui,
+			BoundingBox(0),
+			10,
+			X
+		);
+	volume_buttons_flex->fit_content = true;
+
+	auto add_volume_button =
+		make_shared<Button>(
+			"add_volume",
+			settings_ui,
+			&asset_manager->get_ui_texture("medieval_button"),
+			"+",
+			&asset_manager->get_font("medieval_button_font"),
+			SDL_Color({ 65, 45, 10 }),
+			BoundingBox(25, 15),
+			vec2(10, 10)
+		);
+
+	auto sub_volume_button =
+		make_shared<Button>(
+			"sub_volume",
+			settings_ui,
+			&asset_manager->get_ui_texture("medieval_button"),
+			"-",
+			&asset_manager->get_font("medieval_button_font"),
+			SDL_Color({ 65, 45, 10 }),
+			BoundingBox(25, 15),
+			vec2(10, 10)
+		);
+
+	add_volume_button->add_event_listener(LMBUp, "volume_change", [=](GameState& game_state, auto) {
+		float new_volume = SoundManager::get_volume() + 0.05;
+		if (new_volume > 1)
+			new_volume = 1;
+		if (new_volume < 0)
+			new_volume = 0;
+		SoundManager::set_volume(new_volume);
+		
+		volume_text->set_content("Volume: " + to_string(static_cast<int>(floorf(new_volume * 100))) + "%");
+	});
+
+	sub_volume_button->add_event_listener(LMBUp, "volume_change", [=](GameState& game_state, auto) {
+		float new_volume = SoundManager::get_volume() - 0.05;
+		if (new_volume > 1)
+			new_volume = 1;
+		if (new_volume < 0)
+			new_volume = 0;
+		SoundManager::set_volume(new_volume);
+		
+		volume_text->set_content("Volume: " + to_string(static_cast<int>(floorf(new_volume * 100))) + "%");
+	});
+
+	volume_buttons_flex->add_children({ add_volume_button, sub_volume_button });
+
+	auto scaling_text =
+		make_shared<Text>(
+			"scaling",
+			settings_ui,
+			"Window Scaling: 0",
+			&asset_manager->get_font("medieval_button_font")
+		);
+
+	scaling_text->set_content("Window Scaling: " + to_string(static_cast<int>(floorf(game_state.renderer_state.saved_scaling * 100))) + "%");
+	scaling_text->fit_content = true;
+
+	auto scaling_buttons_flex =
+		make_shared<FlexContainer>(
+			"vb_flex",
+			settings_ui,
+			BoundingBox(0),
+			10,
+			X
+		);
+	scaling_buttons_flex->fit_content = true;
+
+	auto add_scaling_button =
+		make_shared<Button>(
+			"add_scaling",
+			settings_ui,
+			&asset_manager->get_ui_texture("medieval_button"),
+			"+",
+			&asset_manager->get_font("medieval_button_font"),
+			SDL_Color({ 65, 45, 10 }),
+			BoundingBox(25, 15),
+			vec2(10, 10)
+		);
+
+	auto sub_scaling_button =
+		make_shared<Button>(
+			"sub_scaling",
+			settings_ui,
+			&asset_manager->get_ui_texture("medieval_button"),
+			"-",
+			&asset_manager->get_font("medieval_button_font"),
+			SDL_Color({ 65, 45, 10 }),
+			BoundingBox(25, 15),
+			vec2(10, 10)
+		);
+
+	add_scaling_button->add_event_listener(LMBUp, "scaling_change", [=](GameState& game_state, auto) {
+		float new_scaling = clamp(game_state.renderer_state.scaling + 0.05F, 0.125F, 10.0F);
+		//if (new_scaling > 10)
+		//	new_scaling = 10;
+		//if (new_scaling < 0.125)
+		//	new_scaling = 0.125;
+
+		game_state.renderer_state.saved_scaling = new_scaling;
+		set_scale(new_scaling);
+		
+		scaling_text->set_content("Window Scaling: " + to_string(static_cast<int>(floorf(new_scaling * 100))) + "%");
+	});
+
+	sub_scaling_button->add_event_listener(LMBUp, "scaling_change", [=](GameState& game_state, auto) {
+		float new_scaling = clamp(game_state.renderer_state.scaling - 0.05F, 0.125F, 10.0F);
+		//if (new_scaling > 10)
+		//	new_scaling = 10;
+		//if (new_scaling < 0.125)
+		//	new_scaling = 0.125;
+
+		game_state.renderer_state.saved_scaling = new_scaling;
+		set_scale(new_scaling);
+		
+		scaling_text->set_content("Window Scaling: " + to_string(static_cast<int>(floorf(new_scaling * 100))) + "%");
+	});
+
+	scaling_buttons_flex->add_children({ add_scaling_button, sub_scaling_button });
+
+	flex->add_children({ caption_text, back_button, fullscreen_button, volume_text, volume_buttons_flex, scaling_text, scaling_buttons_flex });
+
+	flex->update_layout(true);
+
+	auto flex_dims = flex->get_dimensions();
+
+	flex->set_position(vec2(WINDOW_WIDTH / 2 - flex_dims.x / 2, WINDOW_HEIGHT / 2 - flex_dims.y / 2));
 }
 
 void Engine::prepare() {
@@ -544,6 +818,11 @@ void Engine::prepare() {
 	asset_manager->load_font("medieval_button_font", "assets/BerkshireSwash-Regular.ttf", 24);
 	asset_manager->load_font("medieval_button_font_large", "assets/BerkshireSwash-Regular.ttf", 48);
 	asset_manager->load_level_data("level1", "assets/level1.calev", renderer);
+	asset_manager->load_level_data("level2", "assets/level2.calev", renderer);
+
+	asset_manager->load_texture("death_screen_bg", "assets/death_screen_bg.catex", renderer);
+	asset_manager->load_texture("level_select_bg", "assets/level_select_bg.catex", renderer);
+	asset_manager->load_texture("menu_bg", "assets/menu_bg.catex", renderer);
 
 	asset_manager->load_audio("ball_break", "assets/ball_break.wav", Sound);
 	asset_manager->load_audio("ball_collision", "assets/ball_collision.wav", Sound);
@@ -558,6 +837,8 @@ void Engine::prepare() {
 		{ DeathScreen, asset_manager->get_audio("death_song") },
 		{ InLevel, asset_manager->get_audio("level_song") }
 	};
+
+	SoundManager::set_music_volume(SoundManager::MUSIC_VOLUME * SoundManager::get_volume());
 
 	add_event_handler(new MouseHandler());
 	add_event_handler(new KeyboardHandler());
@@ -612,6 +893,6 @@ void Engine::set_fullscreen(bool state) {
 	else {
 		SDL_SetWindowFullscreen(window, 0);
 
-		set_scale(1);
+		set_scale(game_state.renderer_state.saved_scaling);
 	}
 }

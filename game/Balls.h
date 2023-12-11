@@ -215,8 +215,10 @@ class BallTrack : public Drawable, public Updatable {
 	// ... and this is set to true when all the balls are gone
 	bool is_fading_out_to_screen = false;
 
-	// pointer to asset_manager for Ball's constructor
+	// pointer to AssetManager for Ball's constructor
 	shared_ptr<AssetManager> asset_manager;
+	// pointer to EntityManager for Level finish
+	shared_ptr<EntityManager> entity_manager;
 
 	// ball breaking particles
 	vector<BallParticles> ball_particles;
@@ -241,9 +243,9 @@ public:
 
 	float speed_multiplier = 1;
 
-	BallTrack(const vector<vec2>& points, shared_ptr<AssetManager> asset_manager);
+	BallTrack(const vector<vec2>& points, const uint& ball_count, shared_ptr<AssetManager> asset_manager, shared_ptr<EntityManager> entity_manager);
 	void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
-	virtual void update(const float& delta, GameState& game_state) override;
+	void update(const float& delta, GameState& game_state) override;
 
 	// check for collision with the ball track at a given point 
 	// and radius of collision (ball's and/or track's radius)
@@ -265,11 +267,14 @@ public:
 	// finds a TrackSegment by the end of the BallSegment of given index
 	//
 	// needed for ball insertion animation
-	const TrackSegment& get_track_segment_by_bs_index(const float& ball_segment_index);
+	const TrackSegment& get_track_segment_by_bs_index(const float& ball_segment_index) const;
 
 	// calculates a vec2 of the destination insertion point,
 	// positioned globally (relative to window)
 	//
 	// needed for ball insertion animation
-	vec2 get_insertion_pos_by_bs_index(const float& ball_segment_index, bool inserting_at_end);
+	vec2 get_insertion_pos_by_bs_index(const float& ball_segment_index, bool inserting_at_end) const;
+
+	// gets the color spectrum of all balls currently shown
+	vector<BallColor> get_current_colors() const;
 };

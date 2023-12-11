@@ -97,6 +97,7 @@ public:
 
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
 	virtual void update(const float& delta, GameState& game_state) override;
+	virtual void update_layout(bool update_children = false);
 
 	bool is_mouse_inside_element(GameState& game_state) const;
 
@@ -164,8 +165,10 @@ public:
 		vec2 dimensions = vec2(100, 100)
 	) : UIElement(id, ui, position, dimensions), UISprite(texture) {}
 
-	virtual void update(const float& delta, GameState& game_state) override;
 	virtual void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override;
+	virtual void update(const float& delta, GameState& game_state) override;
+
+	virtual void update_layout(bool update_children = false) override;
 };
 
 class LayoutUIElement : public UIElement {
@@ -177,9 +180,17 @@ public:
 		vec2 dimensions = vec2(100, 100)
 	) : UIElement(id, ui, position, dimensions) {}
 
-	virtual void update(const float& delta, GameState& game_state) override { layout_children(delta, game_state); }
+	virtual void update(const float& delta, GameState& game_state) override { 
+		update_layout(true);
+		UIElement::update(delta, game_state);
+	}
 
-	virtual void layout_children(const float& delta, GameState& game_state) = 0;
+	virtual void update_layout(bool update_children = false) override { 
+		layout_children(); 
+		UIElement::update_layout(update_children); 
+	}
+
+	virtual void layout_children() = 0;
 };
 
 class UI : public Drawable, public Updatable {

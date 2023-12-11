@@ -16,7 +16,6 @@ class Level : public Drawable, public Updatable {
 	shared_ptr<Sprite> background_sprite = nullptr;
 	SDL_Renderer* renderer;
 
-
 public:
 	const LevelData* data;
 
@@ -38,18 +37,20 @@ public:
 			InLevel
 		);
 
-		create_ui(entity_manager, asset_manager, renderer);
-
 		ball_track = entity_manager->add_entity(
 			"ball_track",
 			make_shared<BallTrack>(
 				data->track_points,
-				asset_manager
+				data->track_ball_count,
+				asset_manager,
+				entity_manager
 			),
 			InLevel
 		);
 
 		ball_track->speed_multiplier = data->track_speed_multiplier;
+
+		create_ui(entity_manager, asset_manager, renderer);
 
 		player = entity_manager->add_entity(
 			"player", 
@@ -78,9 +79,7 @@ public:
 		entity_manager->remove_entity("game_ui");
 	}
 
-	void draw(SDL_Renderer* renderer, const RendererState& renderer_state) const override {
-		//background_sprite->draw(renderer, renderer_state);
-	}
+	void draw(SDL_Renderer*, const RendererState&) const override {}
 
 	void update(const float& delta, GameState& game_state) override {
 		auto ui = entity_manager->get_entity_by_name<UI>("game_ui");
