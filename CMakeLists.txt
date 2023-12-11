@@ -1,9 +1,3 @@
-# include SDL2 and SDL2_image
-list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2-2.28.3")
-list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_image-2.6.3")
-list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_ttf-2.20.2")
-list(APPEND CMAKE_PREFIX_PATH "C:/dev/SDL2_mixer-2.6.3")
-
 cmake_minimum_required(VERSION 3.8)
 
 project(CatinkAdventures
@@ -13,16 +7,28 @@ project(CatinkAdventures
 )
 
 set(CMAKE_CXX_STANDARD 20)
+list(
+	APPEND 
+	CMAKE_PREFIX_PATH 
+	${CMAKE_SOURCE_DIR}/extern/SDL2-2.28.3 
+	${CMAKE_SOURCE_DIR}/extern/SDL2_image-2.6.3 
+	${CMAKE_SOURCE_DIR}/extern/SDL2_mixer-2.6.3
+	${CMAKE_SOURCE_DIR}/extern/SDL2_ttf-2.20.2
+)
 
-# generated executable
-add_executable(${PROJECT_NAME} main.cpp)
+set(GUI_TYPE "")
 
 # disable debug console window if running in Release
 if (${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-	set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS /SUBSYSTEM:WINDOWS)
-else()
-	set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
+	if (APPLE)
+		set(GUI_TYPE MACOSX_BUNDLE)
+	elseif (WIN32)
+		set(GUI_TYPE WIN32)
+	endif()
 endif()
+
+# generated executable
+add_executable(${PROJECT_NAME} ${GUI_TYPE} main.cpp)
 
 # source files for engine and game subdirectories
 
@@ -57,8 +63,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	engine/UIElements/Button.h
 	engine/UIElements/FlexContainer.h
 )
-
-# header files directories for the given executable
 
 # include SDL2
 
