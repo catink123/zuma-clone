@@ -92,14 +92,14 @@ public:
 		SDL_RWwrite(io, &fullscreen, 1, 1);
 
 		// write volume
-		char volume = static_cast<char>(Mix_MasterVolume(-1));
+		unsigned char volume = static_cast<unsigned char>(Mix_MasterVolume(-1));
 		SDL_RWwrite(io, &volume, 1, 1);
 
 		// write scaling
-		char* scaling = (char*)malloc(sizeof(char) * 2);
+		unsigned char* scaling = (unsigned char*)malloc(sizeof(unsigned char) * 2);
 
-		scaling[0] = static_cast<char>(renderer_state.saved_scaling / 0x100);
-		scaling[1] = static_cast<char>(static_cast<int>(renderer_state.saved_scaling * 100) % 0x100);
+		scaling[0] = static_cast<unsigned char>(renderer_state.saved_scaling / 0x100);
+		scaling[1] = static_cast<unsigned char>(static_cast<int>(renderer_state.saved_scaling * 100) % 0x100);
 
 		SDL_RWwrite(io, scaling, 2, 1);
 
@@ -117,14 +117,14 @@ public:
 		}
 
 		char fullscreen = 0;
-		char volume = 0;
+		unsigned char volume = 0;
 		SDL_RWread(io, &fullscreen, 1, 1);
 		SDL_RWread(io, &volume, 1, 1);
 
 		renderer_state.is_fullscreen = static_cast<bool>(fullscreen);
-		SoundManager::set_volume(static_cast<int>(volume) / MIX_MAX_VOLUME);
+		SoundManager::set_volume(static_cast<float>(volume) / static_cast<float>(MIX_MAX_VOLUME));
 
-		char* scaling = (char*)malloc(sizeof(char) * 2);
+		unsigned char* scaling = (unsigned char*)malloc(sizeof(unsigned char) * 2);
 		SDL_RWread(io, scaling, 2, 1);
 
 		renderer_state.scaling = (static_cast<float>(scaling[0] * 0x100) + static_cast<float>(scaling[1])) / 100;
