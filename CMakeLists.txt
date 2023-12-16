@@ -7,19 +7,21 @@ project(CatinkAdventures
 )
 
 set(CMAKE_CXX_STANDARD 20)
-list(
-	APPEND 
-	CMAKE_PREFIX_PATH 
-	${CMAKE_SOURCE_DIR}/extern/SDL2-2.28.3 
-	${CMAKE_SOURCE_DIR}/extern/SDL2_image-2.6.3 
-	${CMAKE_SOURCE_DIR}/extern/SDL2_mixer-2.6.3
-	${CMAKE_SOURCE_DIR}/extern/SDL2_ttf-2.20.2
-)
+if (WIN32)
+	list(
+		APPEND 
+		CMAKE_PREFIX_PATH 
+		${CMAKE_SOURCE_DIR}/extern/SDL2-2.28.3 
+		${CMAKE_SOURCE_DIR}/extern/SDL2_image-2.6.3 
+		${CMAKE_SOURCE_DIR}/extern/SDL2_mixer-2.6.3
+		${CMAKE_SOURCE_DIR}/extern/SDL2_ttf-2.20.2
+	)
+endif()
 
-set(GUI_TYPE "")
+set(IS_DEBUG $<BOOL:$<CONFIG:Debug>>)
 
-# disable debug console window if running in Release
-if (${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+if (${IS_DEBUG})
+else()
 	if (APPLE)
 		set(GUI_TYPE MACOSX_BUNDLE)
 	elseif (WIN32)
@@ -64,26 +66,22 @@ target_sources(${PROJECT_NAME} PRIVATE
 	engine/UIElements/FlexContainer.h
 )
 
-# include SDL2
-
 find_package(SDL2 REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
-
-# include SDL2_image
-
 find_package(SDL2_image REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
-
-# include SDL2_ttf
-
 find_package(SDL2_ttf REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_ttf::SDL2_ttf)
-
-# include SDL2_mixer
-
 find_package(SDL2_mixer REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_MIXER_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_mixer::SDL2_mixer)
+
+target_include_directories(${PROJECT_NAME} PRIVATE 
+	${SDL2_INCLUDE_DIRS}
+	${SDL2_IMAGE_INCLUDE_DIRS}
+	${SDL2_TTF_INCLUDE_DIRS}
+	${SDL2_MIXER_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+	SDL2::SDL2
+	SDL2::SDL2main
+	SDL2_image::SDL2_image
+	SDL2_ttf::SDL2_ttf
+	SDL2_mixer::SDL2_mixer
+)

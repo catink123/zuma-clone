@@ -34,8 +34,6 @@ typedef struct vec2 {
 	static float dot(const vec2& first, const vec2& second);
 } vec2;
 
-static const SDL_Rect DEFAULT_RECT;
-
 inline SDL_FRect rect_to_frect(const SDL_Rect& rect) {
 	SDL_FRect result;
 	result.x = static_cast<float>(rect.x);

@@ -12,16 +12,16 @@ public:
 	EntityNonexistentException(const string& what_arg) : logic_error(what_arg) {}
 };
 
-typedef unordered_map<string, shared_ptr<Drawable>> entity_map;
-typedef unordered_map<GameSection, vector<shared_ptr<Drawable>>> section_map;
+typedef unordered_map<string, shared_ptr<Drawable>> entity_map_t;
+typedef unordered_map<GameSection, vector<shared_ptr<Drawable>>> section_map_t;
 
 // Manages all entities in the engine
 struct EntityManager {
 	// raw entity pointers container
 	vector<shared_ptr<Drawable>> entities;
 	// table of named pointers to entities
-	entity_map entity_map;
-	section_map section_map = {
+	entity_map_t entity_map;
+	section_map_t section_map = {
 		{ InLevel, {} },
 		{ InMenu, {} },
 		{ DeathScreen, {} },

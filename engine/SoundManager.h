@@ -1,6 +1,5 @@
 #pragma once
 #include <SDL.h>
-#undef main
 #include <SDL_mixer.h>
 #include <stdexcept>
 #include "Audio.h"

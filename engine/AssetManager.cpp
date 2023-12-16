@@ -143,7 +143,7 @@ void AssetManager::unload_texture(const string& id) {
 }
 
 float AssetManager::convert_float_type(unsigned char* data) {
-	return static_cast<uint>(data[0]) * 0x100 + static_cast<uint>(data[1]);
+	return static_cast<float>(static_cast<uint>(data[0]) * 0x100 + static_cast<uint>(data[1]));
 }
 
 void AssetManager::load_ui_texture(const string& id, const string& path, SDL_Renderer* renderer) {
@@ -225,10 +225,10 @@ void AssetManager::load_ui_texture(const string& id, const string& path, SDL_Ren
 	// cutting margins are represented by 2 bytes in a row in the following order:
 	// left right top bottom
 
-	ui_props.left = convert_float_type(signature_data + 9);
-	ui_props.right = convert_float_type(signature_data + 11);
-	ui_props.top = convert_float_type(signature_data + 13);
-	ui_props.bottom = convert_float_type(signature_data + 15);
+	ui_props.left = static_cast<uint>(convert_float_type(signature_data + 9));
+	ui_props.right = static_cast<uint>(convert_float_type(signature_data + 11));
+	ui_props.top = static_cast<uint>(convert_float_type(signature_data + 13));
+	ui_props.bottom = static_cast<uint>(convert_float_type(signature_data + 15));
 
 	// encapsulate raw texture pointer, it's width and height in a Texture object
 	UITexture t_data(surface->w, surface->h, texture, ui_props);
@@ -303,12 +303,12 @@ void AssetManager::load_level_data(const string& id, const string& path, SDL_Ren
 
 	LevelData l_data;
 
-	l_data.player_position.x = convert_uint_type(signature_data + 6);
-	l_data.player_position.y = convert_uint_type(signature_data + 8);
+	l_data.player_position.x = static_cast<float>(convert_uint_type(signature_data + 6));
+	l_data.player_position.y = static_cast<float>(convert_uint_type(signature_data + 8));
 
 	l_data.track_speed_multiplier = convert_float_type(signature_data + 10) / 100;
 
-	l_data.track_ball_count = signature_data[12];
+	l_data.track_ball_count = static_cast<uint>(signature_data[12]);
 
 	// construct C string for level track points
 	uint point_count = static_cast<uint>(signature_data[13]);
@@ -326,7 +326,7 @@ void AssetManager::load_level_data(const string& id, const string& path, SDL_Ren
 
 	vector<vec2> track_points;
 
-	for (int i = 0; i < point_count; i++) {
+	for (uint i = 0; i < point_count; i++) {
 		unsigned char* x_data = level_data + i * 4;
 		unsigned char* y_data = level_data + i * 4 + 2;
 		track_points.push_back(vec2(

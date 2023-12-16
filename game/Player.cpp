@@ -226,7 +226,7 @@ void PlayerBall::set_insertion_animation(const uint& ball_segment_index, bool in
 			BallTrack::BALL_INSERTION_TIME, 
 			TIMING_FUNCTIONS.at(TimingFunctionType::EaseOut)
 		);
-	const TrackSegment& ts = ball_track->get_track_segment_by_bs_index(ball_segment_index);
+	const TrackSegment& ts = ball_track->get_track_segment_by_bs_index(static_cast<float>(ball_segment_index));
 
 	saved_angle = global_transform.rotation;
 	global_transform.rotation = 0;
@@ -286,7 +286,7 @@ void PlayerBall::update(const float& delta, GameState& game_state) {
 			local_transform.rotation = saved_angle + target_angle * progress;
 
 			vec2 target_position =
-				ball_track->get_insertion_pos_by_bs_index(target_ball_segment_index, is_inserting_at_end) - global_transform.position;
+				ball_track->get_insertion_pos_by_bs_index(static_cast<float>(target_ball_segment_index), is_inserting_at_end) - global_transform.position;
 
 			local_transform.position = target_position * progress;
 

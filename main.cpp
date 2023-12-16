@@ -1,11 +1,9 @@
+#include <SDL.h>
+#include <SDL_main.h>
 #include "engine/Engine.h"
 
-#ifdef NDEBUG
-int WinMain() {
-#else
-int main() {
+int main(int, char**) {
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
-#endif
 	Engine* engine = new Engine();
 	engine->run_loop();
 	delete engine;
@@ -15,4 +13,5 @@ int main() {
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL quit.\n");
 	TTF_Quit();
 	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "SDL_ttf quit.\n");
+	return 0;
 }

@@ -120,7 +120,7 @@ BallTrack::BallTrack(
 
 		// as cmath's acos doesn't give negative values, we need to account for negative angles
 		if (segment.angle_cos < 0)
-			segment.angle -= M_PI;
+			segment.angle -= static_cast<float>(M_PI);
 
 		// if the height of the segment's right triangle is negative
 		// (the segment's end point is closer to the top boundary than the start point),
@@ -141,13 +141,13 @@ BallTrack::BallTrack(
 	}
 
 	// calculating and caching the total length of the track
-	cache.total_length = 0;
+	cache.total_length = 0.0F;
 	for (TrackSegment segment : cache.segments) {
 		cache.total_length += segment.length;
 	}
 
 	BallSegment segment;
-	for (int i = 0; i < ball_count; i++) {
+	for (uint i = 0; i < ball_count; i++) {
 		BallColor color = (BallColor)(rand() % BALL_COLOR_COUNT);
 		segment.balls.push_back(
 			Ball(asset_manager, color)
@@ -200,11 +200,11 @@ vector<uint> BallTrack::get_track_segments_from_ball_segment(const BallSegment& 
 	// track segment index of the end of given ball segment
 	optional<uint> end_track_index = get_track_segment_by_position(ball_segment.position + ball_segment.get_total_length());
 	if (end_track_index == nullopt)
-		end_track_index = cache.segments.size() - 1;
+		end_track_index = static_cast<uint>(cache.segments.size() - 1);
 
 	// every track segment index between the start and end ones 
 	// will also contain the given ball_segment, so we add the resulting range
-	for (int i = start_track_index.value(); i <= end_track_index.value(); i++)
+	for (uint i = start_track_index.value(); i <= end_track_index.value(); i++)
 		result.push_back(i);
 	
 	return result;
@@ -411,7 +411,7 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			auto end_it = segment.balls.begin() + saved_ball_index + same_color_count;
 
 			// add breaking particles
-			for (int i = saved_ball_index; i < saved_ball_index + same_color_count; i++) {
+			for (uint i = saved_ball_index; i < saved_ball_index + same_color_count; i++) {
 				const Ball& ball = segment.balls[i];
 
 				ball_particles.push_back(
@@ -433,7 +433,7 @@ void BallTrack::update(const float& delta, GameState& game_state) {
 			// leave a blank space in place of them
 			// if the blank space is not at the start, cut the segment
 			if (saved_ball_index > 0)
-				cut_ball_segment(i, saved_ball_index * Ball::BALL_SIZE, Ball::BALL_SIZE * same_color_count);
+				cut_ball_segment(i, static_cast<float>(saved_ball_index * Ball::BALL_SIZE), static_cast<float>(Ball::BALL_SIZE * same_color_count));
 			// otherwise, just shift it by broken ball count
 			else
 				segment.position += Ball::BALL_SIZE * same_color_count;
@@ -530,7 +530,7 @@ optional<BallTrackCollisionData> BallTrack::get_collision_data(const vec2& point
 
 bool BallTrack::cut_ball_segment(const uint& ball_segment_index, const float& position, const float& spacing) {
 	// calculate the index of the last ball that will be in the first ball segment
-	uint last_ball_index = ceilf(position / Ball::BALL_SIZE);
+	uint last_ball_index = static_cast<uint>(ceilf(position / Ball::BALL_SIZE));
 
 	if (last_ball_index >= ball_segments[ball_segment_index].balls.size() || last_ball_index <= 0)
 		return false;
@@ -587,7 +587,7 @@ void BallTrack::connect_ball_segments(const uint& ball_segment_index, bool inher
 }
 
 const TrackSegment& BallTrack::get_track_segment_by_bs_index(const float& ball_segment_index) const {
-	auto& ball_segment = ball_segments[ball_segment_index];
+	auto& ball_segment = ball_segments[static_cast<uint>(ball_segment_index)];
 
 	optional<uint> track_segment_index = get_track_segment_by_position(
 		ball_segment.position + ball_segment.get_total_length()
@@ -600,7 +600,7 @@ const TrackSegment& BallTrack::get_track_segment_by_bs_index(const float& ball_s
 }
 
 vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index, bool inserting_at_end) const {
-	auto& ball_segment = ball_segments[ball_segment_index];
+	auto& ball_segment = ball_segments[static_cast<uint>(ball_segment_index)];
 
 	// calculate the ball's position relative to the start of the track
 	float ball_absolute_position = ball_segment.position;
@@ -610,7 +610,7 @@ vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index, b
 	// find the track segment the ball is in
 	optional<uint> track_segment_index = get_track_segment_by_position(ball_absolute_position);
 	if (track_segment_index == nullopt)
-		track_segment_index = cache.segments.size() - 1;
+		track_segment_index = static_cast<uint>(cache.segments.size() - 1);
 
 	const TrackSegment& track_segment = cache.segments[track_segment_index.value()];
 
@@ -625,7 +625,7 @@ vec2 BallTrack::get_insertion_pos_by_bs_index(const float& ball_segment_index, b
 	vec2 result = cache.points[0];
 
 	// sum up global position for all track segments up to the previous one
-	for (int i = 0; i < track_segment_index.value(); i++) {
+	for (uint i = 0; i < track_segment_index.value(); i++) {
 		const TrackSegment& current_track_segment = cache.segments[i];
 		result.x += current_track_segment.length * current_track_segment.angle_cos;
 		result.y += current_track_segment.length * current_track_segment.angle_sin;

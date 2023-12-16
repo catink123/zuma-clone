@@ -1,6 +1,5 @@
 #pragma once
 #include <SDL.h>
-#undef main
 #include <SDL_image.h>
 #include "common.h"
 

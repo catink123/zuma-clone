@@ -1,6 +1,5 @@
 #pragma once
 #include <SDL.h>
-#undef main
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
@@ -21,7 +20,7 @@
 
 using namespace std;
 
-typedef unordered_map<string, shared_ptr<Drawable>> entity_map;
+typedef unordered_map<string, shared_ptr<Drawable>> entity_map_t;
 
 void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetManager> asset_manager, SDL_Renderer* renderer);
 

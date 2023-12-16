@@ -693,7 +693,7 @@ void Engine::prepare_settings_ui() {
 		);
 
 	add_volume_button->add_event_listener(LMBUp, "volume_change", [=](GameState& game_state, auto) {
-		float new_volume = SoundManager::get_volume() + 0.05;
+		float new_volume = SoundManager::get_volume() + 0.05F;
 		if (new_volume > 1)
 			new_volume = 1;
 		if (new_volume < 0)

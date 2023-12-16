@@ -141,8 +141,8 @@ class BallParticles : public Drawable, public Updatable {
 
 		p.position = origin;
 		
-		float random_pos_angle = rand_float() * M_PI * 2;
-		float random_pos_len = rand_float() * static_cast<float>(Ball::BALL_SIZE) / 2;
+		float random_pos_angle = static_cast<float>(rand_float() * M_PI * 2);
+		float random_pos_len = static_cast<float>(rand_float() * static_cast<float>(Ball::BALL_SIZE) / 2);
 		p.position.x += cosf(random_pos_angle) * random_pos_len;
 		p.position.y += sinf(random_pos_angle) * random_pos_len;
 
@@ -161,7 +161,7 @@ public:
 		color(BALLCOLOR_TO_RGB_MAP.at(color)),
 		texture(particle_texture) 
 	{
-		for (int i = 0; i < (rand() % (MAX_COUNT - MIN_COUNT) + MIN_COUNT); i++)
+		for (uint i = 0; i < (rand() % (MAX_COUNT - MIN_COUNT) + MIN_COUNT); i++)
 			create_particle(origin);
 	}
 
