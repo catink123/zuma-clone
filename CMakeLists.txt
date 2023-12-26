@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.14)
 
 project(CatinkAdventures
 	VERSION 1.0
@@ -7,21 +7,59 @@ project(CatinkAdventures
 )
 
 set(CMAKE_CXX_STANDARD 20)
-if (WIN32)
-	list(
-		APPEND 
-		CMAKE_PREFIX_PATH 
-		${CMAKE_SOURCE_DIR}/extern/SDL2-2.28.3 
-		${CMAKE_SOURCE_DIR}/extern/SDL2_image-2.6.3 
-		${CMAKE_SOURCE_DIR}/extern/SDL2_mixer-2.6.3
-		${CMAKE_SOURCE_DIR}/extern/SDL2_ttf-2.20.2
-	)
-endif()
+
+include(./cmake/CPM.cmake)
+
+CPMAddPackage(
+	NAME SDL2
+	GITHUB_REPOSITORY libsdl-org/SDL
+	GIT_TAG release-2.28.5
+	OPTIONS
+		"SDL_TEST OFF"
+		"SDL_SHARED ON"
+		"SDL_STATIC OFF"
+		"SDL2_DISABLE_INSTALL ON"
+)
+
+CPMAddPackage(
+	NAME SDL2_image
+	GITHUB_REPOSITORY libsdl-org/SDL_image
+	GIT_TAG release-2.8.1
+	OPTIONS
+		"SDL2IMAGE_SAMPLES OFF"
+		"SDL2IMAGE_TESTS OFF"
+		"SDL2IMAGE_SHARED ON"
+		"SDL2IMAGE_STATIC OFF"
+)
+
+CPMAddPackage(
+	NAME SDL2_mixer
+	GITHUB_REPOSITORY libsdl-org/SDL_mixer
+	GIT_TAG release-2.6.3
+	OPTIONS
+		"SDL2MIXER_SAMPLES OFF"
+		"SDL2MIXER_MIDI OFF"
+		"SDL2MIXER_FLAC OFF"
+		"SDL2MIXER_MOD OFF"
+		"SDL2MIXER_INSTALL OFF"
+		"SDL2MIXER_SHARED ON"
+		"SDL2MIXER_STATIC OFF"
+)
+
+CPMAddPackage(
+	NAME SDL2_ttf
+	GITHUB_REPOSITORY libsdl-org/SDL_ttf
+	GIT_TAG release-2.20.2
+	OPTIONS
+		"SDL2TTF_SAMPLES OFF"
+		"SDL2TTF_INSTALL OFF"
+		"SDL2TTF_SHARED ON"
+		"SDL2TTF_STATIC OFF"
+)
 
 set(IS_DEBUG $<BOOL:$<CONFIG:Debug>>)
 
-if (${IS_DEBUG})
-else()
+if (NOT ${IS_DEBUG})
 	if (APPLE)
 		set(GUI_TYPE MACOSX_BUNDLE)
 	elseif (WIN32)
@@ -84,4 +122,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	SDL2_image::SDL2_image
 	SDL2_ttf::SDL2_ttf
 	SDL2_mixer::SDL2_mixer
+)
+
+install(TARGETS ${PROJECT_NAME} 
+	DESTINATION .
+	RUNTIME_DEPENDENCIES DIRECTORIES ${SDL2_LIBRARY_DIRS}
 )

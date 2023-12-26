@@ -511,8 +511,8 @@ void Engine::prepare_level_select_ui() {
 			vec2(10, 10)
 		);
 
-	ls1->add_event_listener(LMBUp, "select_level", [=](GameState& gs, auto) {
-		gs.fade_in([=, &gs]() {
+	ls1->add_event_listener(LMBUp, "select_level", [=, this](GameState& gs, auto) {
+		gs.fade_in([=, &gs, this]() {
 			entity_manager->remove_entity("level");
 			entity_manager->add_entity(
 				"level",
@@ -540,8 +540,8 @@ void Engine::prepare_level_select_ui() {
 			vec2(10, 10)
 		);
 
-	ls2->add_event_listener(LMBUp, "select_level", [=](GameState& gs, auto) {
-		gs.fade_in([=, &gs]() {
+	ls2->add_event_listener(LMBUp, "select_level", [=, this](GameState& gs, auto) {
+		gs.fade_in([=, &gs, this]() {
 			entity_manager->remove_entity("level");
 			entity_manager->add_entity(
 				"level",
@@ -761,7 +761,7 @@ void Engine::prepare_settings_ui() {
 			vec2(10, 10)
 		);
 
-	add_scaling_button->add_event_listener(LMBUp, "scaling_change", [=](GameState& game_state, auto) {
+	add_scaling_button->add_event_listener(LMBUp, "scaling_change", [=, this](GameState& game_state, auto) {
 		float new_scaling = clamp(game_state.renderer_state.scaling + 0.05F, 0.125F, 10.0F);
 		//if (new_scaling > 10)
 		//	new_scaling = 10;
@@ -774,7 +774,7 @@ void Engine::prepare_settings_ui() {
 		scaling_text->set_content("Window Scaling: " + to_string(static_cast<int>(floorf(new_scaling * 100))) + "%");
 	});
 
-	sub_scaling_button->add_event_listener(LMBUp, "scaling_change", [=](GameState& game_state, auto) {
+	sub_scaling_button->add_event_listener(LMBUp, "scaling_change", [=, this](GameState& game_state, auto) {
 		float new_scaling = clamp(game_state.renderer_state.scaling - 0.05F, 0.125F, 10.0F);
 		//if (new_scaling > 10)
 		//	new_scaling = 10;
