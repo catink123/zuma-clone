@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <SDL_main.h>
 #include "engine/Engine.h"
+#include <pugixml.hpp>
 
 int main(int, char**) {
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);

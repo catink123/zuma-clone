@@ -13,14 +13,17 @@
 #include "UI.h"
 #include "../game/LevelData.h"
 #include "Audio.h"
+#include <pugixml.hpp>
+#include <filesystem>
 
-#ifdef NDEBUG
+// #ifdef NDEBUG
 #define prefix "./"
-#else
-#define prefix "../../../"
-#endif
+// #else
+// #define prefix "../../../"
+// #endif
 
 using namespace std;
+using namespace filesystem;
 
 class AMAssetLoadException : public exception {
 	const char* msg;
@@ -115,7 +118,7 @@ public:
 	void load_ui_texture(const string& id, const string& path, SDL_Renderer* renderer);
 	void unload_ui_texture(const string& id);
 
-	void load_level_data(const string& id, const string& path, SDL_Renderer* renderer);
+	void load_level_data(const string& id, const path& asset_path, SDL_Renderer* renderer);
 	void unload_level_data(const string& id);
 
 	void load_font(const string& id, const string& path, int font_size = 24);
@@ -123,4 +126,7 @@ public:
 
 	void load_audio(const string& id, const string& path, AudioType audio_type = Sound);
 	void unload_audio(const string& id);
+
+	void load_all_levels(SDL_Renderer* renderer);
+	const unordered_map<string, LevelData>& get_levels() const { return levels; }
 };

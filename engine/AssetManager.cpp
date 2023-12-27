@@ -260,114 +260,82 @@ uint AssetManager::convert_uint_type(unsigned char* data) {
 	return static_cast<uint>(first_byte) * 0x100 + static_cast<uint>(second_byte);
 }
 
-void AssetManager::load_level_data(const string& id, const string& path, SDL_Renderer* renderer) {
+void AssetManager::load_level_data(const string& id, const path& asset_path, SDL_Renderer* renderer) {
 	// the asset is already loaded, there's no need to load it again
 	if (levels.find(id) != levels.end()) return;
 
 	// construct the path string
-	auto constructed_path = string(prefix) + path;
-	auto c_path_str = constructed_path.c_str();
+	auto path_str = asset_path.string();
+	auto c_path_str = path_str.c_str();
 
-	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "AssetManager: Loading a level data with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
+	log_verbose("AssetManager: Loading a level data with id '%s' on path '%s'...\n", id.c_str(), c_path_str);
 
 	// open file for reading in binary form
 	SDL_RWops* io = SDL_RWFromFile(c_path_str, "rb");
-	// allocate a C string for signature data
-	unsigned char* signature_data = (unsigned char*)malloc(14 * sizeof(unsigned char));
 
-	// if couldn't allocate, throw an error
-	if (!signature_data) throw runtime_error("couldn't allocate signature_data!");
-
-	// if couldn't read first 14 bytes, log and throw an error
-	if (SDL_RWread(io, signature_data, 14 * sizeof(unsigned char), 1) <= 0) {
+	if (!io) {
 		auto sdl_error = SDL_GetError();
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level data %s! Error: %s\n", c_path_str, sdl_error);
+		log_error("AssetManager: Couldn't load level data on path '%s'! Error: %s.\n", c_path_str, sdl_error);
 		throw AMAssetLoadException(sdl_error);
+		return;
 	}
 
-	// if the signature read isn't valid (first 5 bytes don't match the asset signature),
-	// log and throw an error
-	if (!is_signature_valid(signature_data)) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Signature of loaded file is invalid!");
-		throw AMAssetLoadException("invalid signature");
+	LevelData level_data;
+
+	auto level_doc_size = SDL_RWsize(io);
+	void* level_doc_bits = malloc(level_doc_size * sizeof(Sint64));
+
+	SDL_RWread(io, level_doc_bits, level_doc_size, 1);
+
+	pugi::xml_document level_doc;
+	pugi::xml_parse_result parse_res = level_doc.load_buffer(level_doc_bits, level_doc_size);
+
+	if (!level_doc.child("level")) {
+		log_error("AssetManager: Invalid level data document on path '%s'!", c_path_str);
+		return;
 	}
 
-	// get the asset type from the 6th byte (after the asset signature)
-	auto asset_type = (AssetType)signature_data[5];
-
-	// if the asset type isn't a Texture, log and throw an error
-	if (asset_type != AssetType::ATLevel) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Loading non-texture as texture!");
-		throw AMAssetLoadException("invalid asset type");
+	pugi::xpath_node_set xp_points = level_doc.select_nodes("/level/point");
+	for (pugi::xpath_node xp_point : xp_points) {
+		float x = xp_point.node().attribute("x").as_float();
+		float y = xp_point.node().attribute("y").as_float();
+		level_data.track_points.push_back(vec2(x, y));
 	}
 
-	LevelData l_data;
+	level_data.name = level_doc.select_node("/level/name").node().text().as_string();
 
-	l_data.player_position.x = static_cast<float>(convert_uint_type(signature_data + 6));
-	l_data.player_position.y = static_cast<float>(convert_uint_type(signature_data + 8));
+	string bg_path_text = level_doc.select_node("/level/background/@src").attribute().as_string();
+	path bg_path = asset_path.parent_path();
+	bg_path /= bg_path_text;
 
-	l_data.track_speed_multiplier = convert_float_type(signature_data + 10) / 100;
+	string bg_path_str = bg_path.string();
 
-	l_data.track_ball_count = static_cast<uint>(signature_data[12]);
-
-	// construct C string for level track points
-	uint point_count = static_cast<uint>(signature_data[13]);
-	unsigned char* level_data = (unsigned char*)malloc(sizeof(unsigned char) * point_count * 4);
-
-	// if couldn't allocate, throw an error
-	if (!level_data) throw runtime_error("couldn't allocate level_data!");
-
-	// if couldn't read level data bytes, log and throw an error
-	if (SDL_RWread(io, level_data, point_count * 4 * sizeof(unsigned char), 1) <= 0) {
-		auto sdl_error = SDL_GetError();
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level data %s! Error: %s\n", c_path_str, sdl_error);
-		throw AMAssetLoadException(sdl_error);
-	}
-
-	vector<vec2> track_points;
-
-	for (uint i = 0; i < point_count; i++) {
-		unsigned char* x_data = level_data + i * 4;
-		unsigned char* y_data = level_data + i * 4 + 2;
-		track_points.push_back(vec2(
-			static_cast<float>(convert_uint_type(x_data)),
-			static_cast<float>(convert_uint_type(y_data))
-		));
-	}
-
-	l_data.track_points = track_points;
-
-	// load the PNG data from the file's RWops
-	SDL_Surface* surface = IMG_LoadTyped_RW(io, 1, "PNG");
-	// in case of an error (surface = nullptr) throw the error as an exception
-	if (surface == nullptr) {
+	SDL_Texture* texture = IMG_LoadTexture(renderer, bg_path_str.c_str());
+	if (!texture) {
 		auto sdl_error = IMG_GetError();
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load image %s! Error: %s\n", c_path_str, sdl_error);
+		log_error("AssetManager: Couldn't load image from path '%s'! Error: %s\n", bg_path_str.c_str(), sdl_error);
 		throw AMAssetLoadException(sdl_error);
 	}
 
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-	// same as above error handling
-	if (texture == nullptr) {
-		auto sdl_error = SDL_GetError();
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load image %s! Error: %s\n", c_path_str, sdl_error);
-		throw AMAssetLoadException(sdl_error);
-	}
+	int texture_width = 0;
+	int texture_height = 0;
 
-	Texture texture_obj(surface->w, surface->h, texture);
+	SDL_QueryTexture(texture, nullptr, nullptr, &texture_width, &texture_height);
+
+	Texture texture_obj(static_cast<ushort>(texture_width), static_cast<ushort>(texture_height), texture);
 
 	textures.insert({ id, move(texture_obj) });
 
-	l_data.background = &get_texture(id);
+	level_data.background = &get_texture(id);
 
-	// after the texture is loaded, the surface is no longer needed, so it is freed
-	SDL_FreeSurface(surface);
+	auto plpos_node = level_doc.select_node("/level/player-position").node();
+	level_data.player_position.x = plpos_node.attribute("x").as_float();
+	level_data.player_position.y = plpos_node.attribute("y").as_float();
 
-	// we don't need signature_data and level_data anymore, free them
-	free(signature_data);
-	free(level_data);
+	level_data.track_ball_count = level_doc.select_node("/level/ball-count").node().text().as_uint();
+	level_data.track_speed_multiplier = level_doc.select_node("/level/speed-multiplier").node().text().as_float();
 
-	levels.insert({ id, move(l_data) });
+	levels.insert({ id, move(level_data) });
 }
 
 void AssetManager::unload_level_data(const string& id) {
@@ -447,4 +415,13 @@ void AssetManager::unload_audio(const string& id) {
 	audio.at(id).destroy();
 
 	audio.erase(id);
+}
+
+void AssetManager::load_all_levels(SDL_Renderer* renderer) {
+	filesystem::directory_iterator level_dir(string(prefix) + "/assets/levels");
+	for (const auto& entry : level_dir) {
+		if (entry.is_regular_file() && entry.path().extension() == ".xml") {
+			load_level_data(entry.path().stem().string(), entry.path().string(), renderer);
+		}
+	}
 }

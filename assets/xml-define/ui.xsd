@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:attributeGroup name="positioning_attrs">
+    <xs:attribute name="x" type="xs:float" use="optional" />
+    <xs:attribute name="y" type="xs:float" use="optional" />
+    <xs:attribute name="w" type="xs:float" use="optional" />
+    <xs:attribute name="h" type="xs:float" use="optional" />
+  </xs:attributeGroup>
+
+  <xs:complexType name="element_type">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="optional" />
+    <xs:attribute name="fit-content" type="xs:boolean" default="false" />
+    <xs:attributeGroup ref="positioning_attrs" />
+  </xs:complexType>
+
+  <xs:complexType name="textType">
+    <xs:complexContent>
+      <xs:extension base="element_type">
+        <xs:attribute name="text-size" type="xs:unsignedInt" default="14" />
+        <xs:attribute name="text-font" type="xs:string" default="default_font" />
+        <xs:attribute name="value" type="xs:string" use="required" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:element name="text" type="textType" />
+
+  <xs:element name="button">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="element_type">
+          <xs:sequence>
+            <xs:element name="text" type="textType" />
+          </xs:sequence>
+          <xs:attribute name="texture" type="xs:string" />
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="flex_direction">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="vertical" />
+      <xs:enumeration value="horizontal" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="flex">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="element_type">
+          <xs:attribute name="direction" type="flex_direction" />
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ui" type="element_type" />
+</xs:schema>

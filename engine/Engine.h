@@ -34,6 +34,8 @@ class Engine {
 
 	Timer* keyboard_timer = nullptr;
 
+	string current_level;
+
 	void prepare();
 	void draw();
 	void update();

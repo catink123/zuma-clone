@@ -6,6 +6,7 @@
 using namespace std;
 
 struct LevelData {
+	string name;
 	Texture* background;
 	vector<vec2> track_points;
 	vec2 player_position;

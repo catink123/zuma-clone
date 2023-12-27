@@ -16,6 +16,7 @@ void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetM
 			20, X,
 			vec2(), vec2(1280, 0)
 		);
+	game_flex->fit_content = true;
 
 	auto score =
 		make_shared<Text>("score", game_ui, "Score: 0", &asset_manager->get_font("medieval_button_font"), SDL_Color({ 255, 255, 255 }));
@@ -36,8 +37,8 @@ void create_level_ui(shared_ptr<EntityManager> entity_manager, shared_ptr<AssetM
 			game_state.fade_in([entity_manager, &game_state]() {
 				entity_manager->schedule_to_delete("level");
 				game_state.set_section(InMenu);
-				game_state.fade_out([](){}, Fade::DURATION);
-			}, Fade::DURATION);
+				game_state.fade_out([](){}, Fade::DURATION / 1.5);
+			}, Fade::DURATION / 1.5);
 		}
 	);
 
@@ -217,6 +218,9 @@ void Engine::update() {
 		keyboard_timer->update(delta, game_state);
 
 	if (game_state.keyboard_state.keys && game_state.keyboard_state.keys[SDL_SCANCODE_ESCAPE]) {
+		if (game_state.get_section() == InLevel) {
+			entity_manager->schedule_to_delete("level");
+		}
 		game_state.set_section(InMenu);
 	}
 
@@ -499,65 +503,42 @@ void Engine::prepare_level_select_ui() {
 		}, 0.25F);
 	});
 	
-	auto ls1 =
-		make_shared<Button>(
-			"ls1",
-			level_select_ui,
-			&asset_manager->get_ui_texture("medieval_button"),
-			"Level 1",
-			&asset_manager->get_font("medieval_button_font"),
-			SDL_Color({ 65, 45, 10 }),
-			BoundingBox(25, 15),
-			vec2(10, 10)
-		);
+	ls_flex->add_child(ls_back);
 
-	ls1->add_event_listener(LMBUp, "select_level", [=, this](GameState& gs, auto) {
-		gs.fade_in([=, &gs, this]() {
-			entity_manager->remove_entity("level");
-			entity_manager->add_entity(
-				"level",
-				make_shared<Level>(
-					&asset_manager->get_level_data("level1"),
-					asset_manager, entity_manager, renderer, create_level_ui
-				),
-				InLevel
+	for (auto data : asset_manager->get_levels()) {
+		auto select_button =
+			make_shared<Button>(
+				data.first + "_select",
+				level_select_ui,
+				&asset_manager->get_ui_texture("medieval_button"),
+				data.second.name,
+				&asset_manager->get_font("medieval_button_font"),
+				SDL_Color({ 65, 45, 10 }),
+				BoundingBox(25, 15),
+				vec2(10, 10)
 			);
 
-			gs.set_section(InLevel);
-			gs.fade_out([](){}, 1.0F);
-		}, 1.0F);
-	});
-	
-	auto ls2 =
-		make_shared<Button>(
-			"ls2",
-			level_select_ui,
-			&asset_manager->get_ui_texture("medieval_button"),
-			"Level 2",
-			&asset_manager->get_font("medieval_button_font"),
-			SDL_Color({ 65, 45, 10 }),
-			BoundingBox(25, 15),
-			vec2(10, 10)
-		);
+		select_button->add_event_listener(LMBUp, "select_level", [=, this](GameState& gs, auto) {
+			gs.fade_in([=, &gs, this]() {
+				entity_manager->remove_entity("level");
+				entity_manager->add_entity(
+					"level",
+					make_shared<Level>(
+						&asset_manager->get_level_data(data.first),
+						asset_manager, entity_manager, renderer, create_level_ui
+					),
+					InLevel
+				);
 
-	ls2->add_event_listener(LMBUp, "select_level", [=, this](GameState& gs, auto) {
-		gs.fade_in([=, &gs, this]() {
-			entity_manager->remove_entity("level");
-			entity_manager->add_entity(
-				"level",
-				make_shared<Level>(
-					&asset_manager->get_level_data("level2"),
-					asset_manager, entity_manager, renderer, create_level_ui
-				),
-				InLevel
-			);
+				current_level = data.first;
 
-			gs.set_section(InLevel);
-			gs.fade_out([](){}, 1.0F);
-		}, 1.0F);
-	});
+				gs.set_section(InLevel);
+				gs.fade_out([](){}, Fade::DURATION / 3);
+			}, Fade::DURATION / 3);
+		});
 
-	ls_flex->add_children({ ls_back, ls1, ls2 });
+		ls_flex->add_child(select_button);
+	}
 
 	// center on screen
 
@@ -817,8 +798,9 @@ void Engine::prepare() {
 	asset_manager->load_ui_texture("medieval_button", "assets/medieval_button.cauit", renderer);
 	asset_manager->load_font("medieval_button_font", "assets/BerkshireSwash-Regular.ttf", 24);
 	asset_manager->load_font("medieval_button_font_large", "assets/BerkshireSwash-Regular.ttf", 48);
-	asset_manager->load_level_data("level1", "assets/level1.calev", renderer);
-	asset_manager->load_level_data("level2", "assets/level2.calev", renderer);
+	//asset_manager->load_level_data("level1", "assets/level1.calev", renderer);
+	//asset_manager->load_level_data("level2", "assets/level2.calev", renderer);
+	asset_manager->load_all_levels(renderer);
 
 	asset_manager->load_texture("death_screen_bg", "assets/death_screen_bg.catex", renderer);
 	asset_manager->load_texture("level_select_bg", "assets/level_select_bg.catex", renderer);

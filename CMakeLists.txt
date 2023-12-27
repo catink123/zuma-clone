@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+
 
 project(CatinkAdventures
 	VERSION 1.0
@@ -18,7 +20,6 @@ CPMAddPackage(
 		"SDL_TEST OFF"
 		"SDL_SHARED ON"
 		"SDL_STATIC OFF"
-		"SDL2_DISABLE_INSTALL ON"
 )
 
 CPMAddPackage(
@@ -57,6 +58,15 @@ CPMAddPackage(
 		"SDL2TTF_STATIC OFF"
 )
 
+CPMAddPackage(
+	NAME pugixml
+	GITHUB_REPOSITORY zeux/pugixml
+	GIT_TAG v1.14
+	OPTIONS
+		"PUGIXML_BUILD_TESTS OFF"
+		"BUILD_SHARED_LIBS ON"
+)
+
 set(IS_DEBUG $<BOOL:$<CONFIG:Debug>>)
 
 if (NOT ${IS_DEBUG})
@@ -64,6 +74,10 @@ if (NOT ${IS_DEBUG})
 		set(GUI_TYPE MACOSX_BUNDLE)
 	elseif (WIN32)
 		set(GUI_TYPE WIN32)
+	endif()
+else()
+	if (WIN32)
+		set(GUI_TYPE "")
 	endif()
 endif()
 
@@ -104,17 +118,18 @@ target_sources(${PROJECT_NAME} PRIVATE
 	engine/UIElements/FlexContainer.h
 )
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-find_package(SDL2_mixer REQUIRED)
+# find_package(SDL2 REQUIRED)
+# find_package(SDL2_image REQUIRED)
+# find_package(SDL2_ttf REQUIRED)
+# find_package(SDL2_mixer REQUIRED)
 
-target_include_directories(${PROJECT_NAME} PRIVATE 
-	${SDL2_INCLUDE_DIRS}
-	${SDL2_IMAGE_INCLUDE_DIRS}
-	${SDL2_TTF_INCLUDE_DIRS}
-	${SDL2_MIXER_INCLUDE_DIRS}
-)
+# target_include_directories(${PROJECT_NAME} PRIVATE 
+# 	${SDL2_INCLUDE_DIRS}
+# 	${SDL2_IMAGE_INCLUDE_DIRS}
+# 	${SDL2_TTF_INCLUDE_DIRS}
+# 	${SDL2_MIXER_INCLUDE_DIRS}
+# 	${PUGIXML_INCLUDE_DIRS}
+# )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
 	SDL2::SDL2
@@ -122,10 +137,21 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	SDL2_image::SDL2_image
 	SDL2_ttf::SDL2_ttf
 	SDL2_mixer::SDL2_mixer
+	pugixml::pugixml
 )
 
-install(TARGETS ${PROJECT_NAME} 
-	DESTINATION .
-	RUNTIME_DEPENDENCIES DIRECTORIES ${SDL2_LIBRARY_DIRS}
+add_custom_command(
+	TARGET ${PROJECT_NAME} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PROJECT_NAME}>
+	COMMAND_EXPAND_LISTS
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets DESTINATION .)
+
+# include(GNUInstallDirs)
+
+# install(TARGETS ${PROJECT_NAME} 
+# 	RUNTIME_DEPENDENCIES
+# 		PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+# 		DIRECTORIES ${SDL2_LIBRARY_DIRS}
+# )
+# install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_INSTALL_BINDIR})

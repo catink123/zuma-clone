@@ -2,7 +2,13 @@
 #include <utility>
 #include <random>
 #include <SDL.h>
-#include <vector>
+#include <vector> 
+
+#define log_info(...)		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, __VA_ARGS__)
+#define log_debug(...)		SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, __VA_ARGS__)
+#define log_error(...)		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, __VA_ARGS__)
+#define log_warn(...)		SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, __VA_ARGS__)
+#define log_verbose(...)	SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, __VA_ARGS__)
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
